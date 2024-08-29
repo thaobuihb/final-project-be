@@ -3,7 +3,9 @@ const userController = require("../controllers/user.controller");
 const router = express.Router();
 const { body } = require("express-validator");
 const validators = require("../middlewares/validators");
+const authentication = require("../middlewares/authentication")
 
+//user rigister
 /**
  * @route POST /users
  * @description Register for a new account
@@ -14,28 +16,36 @@ const validators = require("../middlewares/validators");
 router.post(
   "/",
   validators.validate([
-    body("name").notEmpty().withMessage("Name is required"),
-    body("email")
+    body("name").exists().notEmpty().withMessage("Name is required"),
+    body("email", "Invalid email")
     .exists()
-      .notEmpty()
-      .withMessage("Email is required")
+      .exists()
       .isEmail()
-      .withMessage("Invalid email address"),
-    body("password")
+      .normalizeEmail({ gmail_remove_dots: false}),
+    body("password", "Invalid password")
       .notEmpty()
-      .withMessage("Password is required")
       .isLength({ min: 6 })
       .withMessage("Password must be at least 6 characters long"),
   ]),
   userController.register
 );
 
+
 /**
- * @route GET /users
- * @description get all User
- * @body none
- * @access admin
+ * @route GET /users?page=1&limit=10
+ * @description get all User with pagination
+ * @access login required
  */
+router.get("/", authentication.loginRequired, userController.getUsers);
+
+// get current user
+/**
+ * @route GET /users/me
+ * @description get current user info
+ * @access login required
+ */
+router.get("/me", authentication.loginRequired, userController.getCurrentUser)
+
 
 /**
  * @route GET /users/:id
@@ -43,6 +53,7 @@ router.post(
  * @body none
  * @access Public
  */
+router.get("/:id", authentication.loginRequired, userController.getSingleUser);
 
 /**
  * @route PUT /users/:id
@@ -50,12 +61,12 @@ router.post(
  * @body none
  * @access User
  */
-
+router.put("/:id", authentication.loginRequired, userController.updateUser)
 /**
  * @route DELETE /users/:id
  * @description delete a User
  * @body none
  * @access admin
  */
-
+router.delete("/:id", authentication.loginRequired, userController.deleteUser)
 module.exports = router;

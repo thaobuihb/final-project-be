@@ -22,4 +22,15 @@ userController.register = catchAsync(async (req, res, next) => {
   sendResponse(res, 200, true, { user, accessToken   }, null, "Create user succsessful");
 });
 
+userController.getUsers =  catchAsync(async (req, res, next) => {});
+
+userController.getCurrentUser =  catchAsync(async (req, res, next) => {});
+
+userController.getSingleUser =  catchAsync(async (req, res, next) => {});
+
+userController.updateUser =  catchAsync(async (req, res, next) => {});
+
+userController.deleteUser =  catchAsync(async (req, res, next) => {});
+
+
 module.exports = userController;
