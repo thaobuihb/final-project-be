@@ -1,5 +1,5 @@
 const { catchAsync, AppError, sendResponse } = require("../helpers/utils");
-const user = require("../models/User");
+const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 
 
@@ -16,7 +16,7 @@ authController.loginWithEmail = catchAsync(async (req, res, next) => {
       throw new AppError(400,  "Invalid Credentials", "Login Error");
   
     //Process
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, user.password); //ma hoa va so sanh password
     if (!isMatch) throw new AppError(400, "Wrong password", "Login Error");
     const accessToken = await user.generateToken();
 
