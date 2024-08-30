@@ -33,9 +33,6 @@ const bookSchema = new Schema({
         type: String,
         default: "",
       },
-      stock: { 
-          type: Number, required: true, min: 0 
-      }, // QL tồn kho
       discountedPrice: { type: Number }, // giá giảm
 
     isDeleted: {

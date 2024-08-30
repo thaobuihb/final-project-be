@@ -11,8 +11,8 @@ const authentication = require("../middlewares/authentication");
  */
 router.post(
     '/',
-    authentication.loginRequired,
-    authentication.authorize(["admin"]),
+    // authentication.loginRequired,
+    // authentication.authorize(["admin"]),
     bookController.createBook
   );
   
@@ -25,7 +25,7 @@ router.post(
  */
 router.get(
     '/',
-    authentication.loginRequired,
+    // authentication.loginRequired,
     bookController.getAllBooks
   );
 
@@ -37,35 +37,12 @@ router.get(
  * @access Public
  */
 
-router.post(
+router.get(
     '/:id',
-    authentication.loginRequired,
-    bookController.getlBookById
+    // authentication.loginRequired,
+    bookController.getBookById
   );
 
-/**
- * @route GET /books/search
- * @description Search for books by name, author, genre, or other criteria
- * @query { name, author, genre, priceRange, rating }
- * @access Public
- */
-router.get(
-    '/search',
-    authentication.loginRequired,
-    bookController.searchBook
-  );
-
-/**
- * @route GET /books/filter
- * @description Filter books by various criteria (e.g., genre, price, rating)
- * @query { genre, minPrice, maxPrice, minRating }
- * @access Public
- */
-router.get(
-    '/search',
-    authentication.loginRequired,
-    bookController.filterBook
-  );
 
 
 /**
@@ -77,9 +54,9 @@ router.get(
 
 router.put(
     '/:id',
-    authentication.loginRequired,
-    authentication.authorize(["admin"]),
-    bookController.createBook
+    // authentication.loginRequired,
+    // authentication.authorize(["admin"]),
+    bookController.updateBook
   );
 
 /**
@@ -91,22 +68,8 @@ router.put(
 
 router.post(
     '/discount',
-    authentication.loginRequired,
-    authentication.authorize(["admin"]),
-    bookController.discountBook
-  );
-
-/**
- * @route PUT /books/discount/:id
- * @description Update discounted information of a book
- * @body { discountRate, discountedPrice }
- * @access Admin
- */
-
-router.put(
-    '/discount/:id',
-    authentication.loginRequired,
-    authentication.authorize(["admin"]),
+    // authentication.loginRequired,
+    // authentication.authorize(["admin"]),
     bookController.discountBook
   );
 
@@ -119,8 +82,8 @@ router.put(
 
 router.delete(
     '/discount/:id',
-    authentication.loginRequired,
-    authentication.authorize(["admin"]),
+    // authentication.loginRequired,
+    // authentication.authorize(["admin"]),
     bookController.deleteBook
   );
 
@@ -133,8 +96,6 @@ router.delete(
 
 router.get(
     '/discount',
-    authentication.loginRequired,
-    authentication.authorize(["admin"]),
     bookController.getDiscountBook
   );
 

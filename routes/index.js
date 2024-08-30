@@ -16,7 +16,7 @@ router.use("/users", userAPI)
 
 //bookAPI
 const bookAPI = require("./book.api");
-router.use("books", bookAPI)
+router.use("/books", bookAPI)
 
 //bookCategoryAPI
 const bookCategoryAPI = require("./bookCategory.api");
