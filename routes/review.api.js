@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const reviewController = require("../controllers/review.controller")
 
 
 /**
@@ -8,6 +9,7 @@ const router = express.Router();
  * @body none
  * @access Public
  */
+router.get("/:id", reviewController.getReview);
 
 
 
@@ -17,6 +19,8 @@ const router = express.Router();
  * @body { bookId, comment }
  * @access User
  */
+router.post("/:id", reviewController.createReview);
+
 
 
 
@@ -26,6 +30,7 @@ const router = express.Router();
  * @body { reviewId, comment }
  * @access User
  */
+router.put("/:id", reviewController.updateReview);
 
 
 
@@ -35,6 +40,7 @@ const router = express.Router();
  * @body { reviewId }
  * @access User
  */
+router.delete("/:id/:reviewId", reviewController.deleteReview);
 
 
 module.exports = router

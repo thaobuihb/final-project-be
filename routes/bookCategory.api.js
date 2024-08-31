@@ -1,14 +1,6 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-
-
-/**
- * @route GET /bookCategory/
- * @description Get all bookCategory
- * @body none
- * @access Admin
- */
-
+const bookCategoryController = require("../controllers/bookCategory.controller");
 
 
 /**
@@ -17,8 +9,33 @@ const router = express.Router();
  * @body { bookId, categoryIds }
  * @access Admin
  */
+router.post("/", 
+// authentication.loginRequired,
+// authentication.authorize(["admin"]),
+bookCategoryController.createBookCategory);
+
+/**
+ * @route GET /bookCategory/
+ * @description Get all bookCategory
+ * @body none
+ * @access Admin
+ */
+router.get("/", 
+// authentication.loginRequired,
+// authentication.authorize(["admin"]),
+bookCategoryController.getAllBookCategories);
 
 
+/**
+ * @route Put /bookCategory/:id
+ * @description Update bookCategory
+ * @body {bookId}
+ * @access Admin
+ */
+router.put("/:bookId", 
+// authentication.loginRequired,
+// authentication.authorize(["admin"]),
+bookCategoryController.updateBookCategory);
 
 /**
  * @route DELETE /bookCategory/:id
@@ -26,6 +43,9 @@ const router = express.Router();
  * @body none
  * @access Admin
  */
+router.delete("/", 
+// authentication.loginRequired,
+// authentication.authorize(["admin"]),
+bookCategoryController.deleteBookCategory);
 
-
-module.exports = router
+module.exports = router;

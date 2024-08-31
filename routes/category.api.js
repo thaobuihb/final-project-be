@@ -1,49 +1,54 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-
+const cartController = require("../controllers/cart.controller");
+const authentication = require("../middlewares/authentication");
 
 /**
- * @route POST /categories/
- * @description create a new category
- * @body { categoryName, description }
- * @access admin
+ * @route POST /carts/:userId
+ * @description Add a new book to the cart
+ * @body { bookId, quantity }
+ * @access User
  */
-
-
+router.post(
+  "/:userId",
+  authentication.loginRequired,
+  cartController.addBookToCart
+);
 
 /**
- * @route GET /categories/
- * @description Get all category
+ * @route PUT /carts/:id
+ * @description Update the quantity of a book in the cart
+ * @body { bookId, quantity }
+ * @access User
+ */
+router.put(
+  "/:id",
+  authentication.loginRequired,
+  cartController.updateBookQuantityInCart
+);
+
+/**
+ * @route GET /carts/:userId
+ * @description Get user's cart
  * @body none
- * @access Public
+ * @access User
  */
-
-
+router.get(
+  "/:userId",
+  authentication.loginRequired,
+  cartController.getCart
+);
 
 /**
- * @route GET /categories/:id
- * @description Get a category by id
+ * @route DELETE /carts/:id
+ * @description Remove a book from the cart
  * @body none
- * @access Public
+ * @access User
  */
+router.delete(
+  "/:id",
+  authentication.loginRequired,
+  cartController.removeBookFromCart
+);
 
-
-
-/**
- * @route PUT /categories/:id
- * @description Update a category by id
- * @body { categoryName, description }
- * @access Admin
- */
-
-
-
-/**
- * @route DELETE /categories/:id
- * @description Delete a category by id
- * @body none
- * @access Admin
- */
-
-
-module.exports = router
+module.exports = router;

@@ -1,14 +1,19 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-
+const cartController = require("../controllers/cart.controller");
+const authentication = require("../middlewares/authentication");
 
 /**
- * @route PUT /carts
- * @description Update the cart
- * @body {bookId, quantity}
+ * @route POST /carts/:userId
+ * @description Add a new book to the cart
+ * @body { bookId, quantity }
  * @access User
  */
-
+router.post(
+  "/:userId",
+//   authentication.loginRequired,
+  cartController.addBookToCart
+);
 
 /**
  * @route PUT /carts/:id
@@ -16,17 +21,23 @@ const router = express.Router();
  * @body { bookId, quantity }
  * @access User
  */
-
-
+router.put(
+  "/:id",
+//   authentication.loginRequired,
+  cartController.updateBookQuantityInCart
+);
 
 /**
- * @route GET /carts
+ * @route GET /carts/:userId
  * @description Get user's cart
  * @body none
  * @access User
  */
-
-
+router.get(
+  "/:userId",
+//   authentication.loginRequired,
+  cartController.getCart
+);
 
 /**
  * @route DELETE /carts/:id
@@ -34,8 +45,10 @@ const router = express.Router();
  * @body none
  * @access User
  */
+router.delete(
+  "/:id",
+//   authentication.loginRequired,
+  cartController.removeBookFromCart
+);
 
-
-
-
-module.exports = router
+module.exports = router;

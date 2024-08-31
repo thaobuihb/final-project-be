@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-
+const orderController = require("../controllers/order.controller")
 
 /**
  * @route POST /orders/:id
@@ -8,6 +8,7 @@ const router = express.Router();
  * @body { books, shippingAddress }
  * @access User
  */
+router.post("/:userId", orderController.createOrder);
 
 
 
@@ -17,6 +18,7 @@ const router = express.Router();
  * @body none
  * @access admin
  */
+router.get("/", orderController.getOrder);
 
 
 
@@ -26,6 +28,7 @@ const router = express.Router();
  * @body none
  * @access User , amdin
  */
+router.get("/:userId", orderController.getAllOrder);
 
 
 
@@ -35,14 +38,32 @@ const router = express.Router();
  * @body { status }
  * @access User , amdin
  */
-
+router.get("/:userId/:orderId", orderController.getOrderById);
 
 /**
- * @route DELETE /orders/:id
- * @description Cancel/delete an order by id
+ * @route Put /orders/:id
+ * @description Cancer a order
+ * @body none
+ * @access user
+ */
+router.put("/:userId/:orderId", orderController.updateOrder);
+
+/**
+ * @route  Put/orders/:id
+ * @description Update Order for Admin
  * @body none
  * @access Admin
  */
+// Update Order for Admin
+router.put("/:orderId", orderController.updateOrderAD);
+
+/**
+ * @route DELETE /orders/:id
+ * @description delete an order by id
+ * @body none
+ * @access Admin
+ */
+router.delete("/:userId/:orderId", orderController.deleteOrder);
 
 
 
