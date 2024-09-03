@@ -11,7 +11,7 @@ const authentication = require("../middlewares/authentication");
  */
 router.post(
     '/',
-    // authentication.loginRequired,
+    authentication.loginRequired,
     // authentication.authorize(["admin"]),
     bookController.createBook
   );

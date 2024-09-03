@@ -1,6 +1,8 @@
 const { catchAsync, AppError, sendResponse } = require("../helpers/utils");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
+const { StatusCodes } = require("http-status-codes");
+
 
 
 
@@ -13,15 +15,15 @@ authController.loginWithEmail = catchAsync(async (req, res, next) => {
     //Validation
     const user = await User.findOne({ email }, "+password");
     if (!user)
-      throw new AppError(400,  "Invalid Credentials", "Login Error");
+      throw new AppError(StatusCodes.BAD_REQUEST,  "Invalid Credentials", "Login Error");
   
     //Process
     const isMatch = await bcrypt.compare(password, user.password); //ma hoa va so sanh password
-    if (!isMatch) throw new AppError(400, "Wrong password", "Login Error");
+    if (!isMatch) throw new AppError(StatusCodes.BAD_REQUEST, "Wrong password", "Login Error");
     const accessToken = await user.generateToken();
 
       //Response
-    sendResponse(res, 200, true, { user, accessToken   }, null, "Login succsessful");
+    sendResponse(res, StatusCodes.OK, true, { user, accessToken   }, null, "Login succsessful");
   });
 
 module.exports = authController;

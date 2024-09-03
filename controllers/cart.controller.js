@@ -1,5 +1,7 @@
 const Cart = require("../models/Cart");
 const { sendResponse, catchAsync, AppError } = require("../helpers/utils");
+const { StatusCodes } = require("http-status-codes");
+
 
 const cartController = {};
 
@@ -11,7 +13,7 @@ cartController.addBookToCart = catchAsync(async (req, res) => {
   if (!bookId || !quantity || !price) {
     return sendResponse(
       res,
-      400,
+      StatusCodes.BAD_REQUEST,
       false,
       null,
       "Book ID, quantity, and price are required",
@@ -53,7 +55,7 @@ cartController.addBookToCart = catchAsync(async (req, res) => {
 
   return sendResponse(
     res,
-    200,
+    StatusCodes.OK,
     true,
     cart.books,
     null,
@@ -71,7 +73,7 @@ cartController.updateBookQuantityInCart = catchAsync(async (req, res) => {
     if (!bookId) {
       return sendResponse(
         res,
-        400,
+        StatusCodes.BAD_REQUEST,
         false,
         null,
         "Book ID is required",
@@ -124,7 +126,7 @@ cartController.updateBookQuantityInCart = catchAsync(async (req, res) => {
       await cart.save();
     }
   
-    return sendResponse(res, 200, true, null, null, "Cart updated successfully");
+    return sendResponse(res, StatusCodes.OK, true, null, null, "Cart updated successfully");
 });
 
 // Get the user's cart
@@ -134,12 +136,12 @@ cartController.getCart = catchAsync(async (req, res) => {
   const cart = await Cart.findOne({ userId }).populate("books.bookId"); // Populate to get detailed book information
 
   if (!cart) {
-    throw new AppError("Cart not found", 404);
+    throw new AppError("Cart not found", StatusCodes.NOT_FOUND);
   }
 
   return sendResponse(
     res,
-    200,
+    StatusCodes.OK,
     true,
     cart.books,
     null,
@@ -155,7 +157,7 @@ cartController.removeBookFromCart = catchAsync(async (req, res) => {
   if (!userId) {
     return sendResponse(
       res,
-      400,
+      StatusCodes.BAD_REQUEST,
       false,
       null,
       "User ID is required",
@@ -167,7 +169,7 @@ cartController.removeBookFromCart = catchAsync(async (req, res) => {
   let cart = await Cart.findOne({ userId });
 
   if (!cart) {
-    throw new AppError("Cart not found", 404);
+    throw new AppError("Cart not found", StatusCodes.NOT_FOUND);
   }
 
   // Remove the book from the cart
@@ -179,7 +181,7 @@ cartController.removeBookFromCart = catchAsync(async (req, res) => {
 
   return sendResponse(
     res,
-    200,
+    StatusCodes.OK,
     true,
     cart.books,
     null,

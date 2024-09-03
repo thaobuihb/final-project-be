@@ -1,5 +1,7 @@
 const Review = require("../models/Review");
 const { sendResponse, catchAsync, AppError } = require("../helpers/utils");
+const { StatusCodes } = require("http-status-codes");
+
 
 const reviewController = {};
 
@@ -19,7 +21,7 @@ reviewController.createReview = catchAsync(async (req, res, next) => {
 
   sendResponse(
     res,
-    200,
+    StatusCodes.OK,
     true,
     savedReview,
     null,
@@ -33,11 +35,11 @@ reviewController.getReview = catchAsync(async (req, res, next) => {
   const review = await Review.find({ userId: id, isDeleted: false });
 
   if (!review) {
-    throw new AppError(404, "Can not get Review", "Review Error");
+    throw new AppError(StatusCodes.NOT_FOUND, "Can not get Review", "Review Error");
   }
 
   // Send the response with the review
-  sendResponse(res, 200, true, review, null, "get Review successfully");
+  sendResponse(res, StatusCodes.OK, true, review, null, "get Review successfully");
 });
 
 // Update a review
@@ -52,10 +54,10 @@ reviewController.updateReview = catchAsync(async (req, res, next) => {
   );
 
   if (!review) {
-    throw new AppError(404, "Review not found", "Review Error");
+    throw new AppError(StatusCodes.NOT_FOUND, "Review not found", "Review Error");
   }
 
-  sendResponse(res, 200, true, review, null, "Review updated successfully");
+  sendResponse(res, StatusCodes.OK, true, review, null, "Review updated successfully");
 });
 
 // Delete a review
@@ -69,9 +71,9 @@ reviewController.deleteReview = catchAsync(async (req, res, next) => {
   );
 
   if (!review) {
-    throw new AppError(404, "Review not found", "Review Error");
+    throw new AppError(StatusCodes.NOT_FOUND, "Review not found", "Review Error");
   }
 
-  sendResponse(res, 200, true, null, null, "Review deleted successfully");
+  sendResponse(res, StatusCodes.OK, true, null, null, "Review deleted successfully");
 });
 module.exports = reviewController;

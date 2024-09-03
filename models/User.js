@@ -81,7 +81,7 @@ userSchema.methods.toJSON = function () {
 };
 
 userSchema.methods.generateToken = async function () {
-  const accessToken = await jwt.sign({ _id: this._id }, JWT_SECRET_KEY, {
+  const accessToken = await jwt.sign({ _id: this._id, role: this.role }, JWT_SECRET_KEY, {
     expiresIn: "1d",
   });
   return accessToken;

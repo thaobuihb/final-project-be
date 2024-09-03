@@ -18,10 +18,6 @@ router.use("/users", userAPI)
 const bookAPI = require("./book.api");
 router.use("/books", bookAPI)
 
-//bookCategoryAPI
-const bookCategoryAPI = require("./bookCategory.api");
-router.use("/bookCategorys", bookCategoryAPI)
-
 //cartAPI
 const cartAPI = require("./cart.api");
 router.use("/carts", cartAPI)

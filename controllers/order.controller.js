@@ -4,6 +4,8 @@ const Book = require("../models/Book");
 const User = require("../models/User");
 const Cart = require("../models/Cart");
 const orderController = {};
+const { StatusCodes } = require("http-status-codes");
+
 
 orderController.createOrder = catchAsync(async (req, res, next) => {
   const { userId } = req.params;
@@ -12,7 +14,7 @@ orderController.createOrder = catchAsync(async (req, res, next) => {
   const user = await User.findById(userId);
 
   if (!user) {
-    throw new AppError(404, "User not found", "Create Order Error");
+    throw new AppError(StatusCodes.NOT_FOUND, "User not found", "Create Order Error");
   }
 
   const orderedBooks = [];
@@ -22,7 +24,7 @@ orderController.createOrder = catchAsync(async (req, res, next) => {
 
     if (!book) {
       throw new AppError(
-        404,
+        StatusCodes.NOT_FOUND,
         `Book not found: ${bookId}`,
         "Create Order Error"
       );
@@ -57,12 +59,12 @@ orderController.createOrder = catchAsync(async (req, res, next) => {
     { $pull: { books: { bookId: { $in: bookIds } } } }
   );
 
-  sendResponse(res, 201, true, order, null, "Order created successfully");
+  sendResponse(res, StatusCodes.CREATED, true, order, null, "Order created successfully");
 });
 
 orderController.getOrder = catchAsync(async (req, res, next) => {
   const orders = await Order.find({ isDeleted: false });
-  return sendResponse(res, 200, true, orders, "Orders retrieved successfully");
+  return sendResponse(res, StatusCodes.OK, true, orders, "Orders retrieved successfully");
 });
 
 orderController.getAllOrder = catchAsync(async (req, res, next) => {
@@ -76,7 +78,7 @@ orderController.getAllOrder = catchAsync(async (req, res, next) => {
       if (foundBook) book.name = foundBook.name;
     }
   }
-  sendResponse(res, 200, true, orders, null, "Orders retrieved successfully");
+  sendResponse(res, StatusCodes.OK, true, orders, null, "Orders retrieved successfully");
 });
 
 orderController.getOrderById = catchAsync(async (req, res, next) => {
@@ -85,10 +87,10 @@ orderController.getOrderById = catchAsync(async (req, res, next) => {
   const order = await Order.findOne({ userId, _id: orderId, isDeleted: false });
 
   if (!order) {
-    throw new AppError(404, "Order not found", "Get Order Error");
+    throw new AppError(StatusCodes.NOT_FOUND, "Order not found", "Get Order Error");
   }
 
-  sendResponse(res, 200, true, order, null, "Order retrieved successfully");
+  sendResponse(res, StatusCodes.OK, true, order, null, "Order retrieved successfully");
 });
 
 orderController.updateOrder = catchAsync(async (req, res, next) => {
@@ -98,18 +100,18 @@ orderController.updateOrder = catchAsync(async (req, res, next) => {
   const order = await Order.findOne({ userId, _id: orderId, isDeleted: false });
 
   if (!order) {
-    throw new AppError(404, "Order not found", "Order Error");
+    throw new AppError(StatusCodes.NOT_FOUND, "Order not found", "Order Error");
   }
 
   if (order.status === "Cancelled") {
-    sendResponse(res, 200, true, null, null, "Order is already cancelled");
+    sendResponse(res, StatusCodes.OK, true, null, null, "Order is already cancelled");
     return;
   }
 
   order.status = status;
   await order.save();
 
-  sendResponse(res, 200, true, order, null, `Order ${status} successfully`);
+  sendResponse(res, StatusCodes.OK, true, order, null, `Order ${status} successfully`);
 });
 
 orderController.deleteOrder = catchAsync(async (req, res, next) => {
@@ -118,14 +120,14 @@ orderController.deleteOrder = catchAsync(async (req, res, next) => {
   const order = await Order.findOne({ userId, _id: orderId, isDeleted: false });
 
   if (!order) {
-    throw new AppError(404, "Order not found", "Order Error");
+    throw new AppError(StatusCodes.NOT_FOUND, "Order not found", "Order Error");
   }
 
   order.isDeleted = true;
 
   await order.save();
 
-  sendResponse(res, 200, true, null, null, "Order deleted successfully");
+  sendResponse(res, StatusCodes.OK, true, null, null, "Order deleted successfully");
 });
 
 orderController.updateOrderAD = catchAsync(async (req, res, next) => {
@@ -135,17 +137,17 @@ orderController.updateOrderAD = catchAsync(async (req, res, next) => {
   const order = await Order.findOne({ _id: orderId, isDeleted: false });
 
   if (!order) {
-    throw new AppError(404, "Order not found", "Order Error");
+    throw new AppError(StatusCodes.NOT_FOUND, "Order not found", "Order Error");
   }
 
   if (order.status === "Cancelled") {
-    throw new AppError(404, "Order is already cancelled", "Order Error");
+    throw new AppError(StatusCodes.NOT_FOUND, "Order is already cancelled", "Order Error");
   }
 
   order.status = status;
   await order.save();
 
-  sendResponse(res, 200, true, order, null, `Order ${status} successfully`);
+  sendResponse(res, StatusCodes.OK, true, order, null, `Order ${status} successfully`);
 });
 
 module.exports = orderController;

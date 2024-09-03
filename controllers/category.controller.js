@@ -2,6 +2,8 @@ const Category = require("../models/Category");
 const Book = require("../models/Book");
 const BookCategory = require ("../models/BookCategory");
 const { sendResponse, catchAsync, AppError } = require("../helpers/utils");
+const { StatusCodes } = require("http-status-codes");
+
 
 const categoryController ={};
 
@@ -21,7 +23,7 @@ categoryController.createCategory = catchAsync(async (req, res, next) => {
   
       sendResponse(
         res,
-        201,
+        StatusCodes.CREATED,
         true,
         createdCategories,
         null,
@@ -34,7 +36,7 @@ categoryController.createCategory = catchAsync(async (req, res, next) => {
   
       sendResponse(
         res,
-        201,
+        StatusCodes.CREATED,
         true,
         category,
         null,
@@ -48,7 +50,7 @@ categoryController.createCategory = catchAsync(async (req, res, next) => {
   
     sendResponse(
       res,
-      200,
+      StatusCodes.OK,
       true,
       categories,
       null,
@@ -63,7 +65,7 @@ categoryController.createCategory = catchAsync(async (req, res, next) => {
     const category = await Category.findOne({ _id: id, isDeleted: false });
   
     if (!category) {
-      throw new AppError(404, "Category not found", "Category Error");
+      throw new AppError(StatusCodes.NOT_FOUND, "Category not found", "Category Error");
     }
   
     const query = { categoryId: category._id };
@@ -120,7 +122,7 @@ categoryController.createCategory = catchAsync(async (req, res, next) => {
   
     sendResponse(
       res,
-      200,
+      StatusCodes.OK,
       true,
       response,
       null,
@@ -139,10 +141,10 @@ categoryController.createCategory = catchAsync(async (req, res, next) => {
     );
   
     if (!category) {
-      throw new AppError(404, "Category not found", "Category Error");
+      throw new AppError(StatusCodes.NOT_FOUND, "Category not found", "Category Error");
     }
   
-    sendResponse(res, 200, true, category, null, "Category updated successfully");
+    sendResponse(res, StatusCodes.OK, true, category, null, "Category updated successfully");
   });
   
   categoryController.deleteCategory = catchAsync(async (req, res, next) => {
@@ -151,12 +153,12 @@ categoryController.createCategory = catchAsync(async (req, res, next) => {
     const category = await Category.findOne({ _id: id, isDeleted: false });
   
     if (!category) {
-      throw new AppError(404, "Category not found", "Category Error");
+      throw new AppError(StatusCodes.NOT_FOUND, "Category not found", "Category Error");
     }
     category.isDeleted = true;
     await category.save();
   
-    sendResponse(res, 200, true, null, null, "Category deleted successfully");
+    sendResponse(res, StatusCodes.OK, true, null, null, "Category deleted successfully");
   });
   
 
