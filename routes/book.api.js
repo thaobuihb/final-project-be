@@ -59,45 +59,6 @@ router.put(
     bookController.updateBook
   );
 
-/**
- * @route POST /books/discount
- * @description Create or update discounted information for a book
- * @body { bookId, discountRate, discountedPrice }
- * @access Admin
- */
-
-router.post(
-    '/discount',
-    // authentication.loginRequired,
-    // authentication.authorize(["admin"]),
-    bookController.discountBook
-  );
-
-/**
- * @route DELETE /books/discount/:id
- * @description Delete discounted information of a book
- * @body none
- * @access Admin
- */
-
-router.delete(
-    '/discount/:id',
-    // authentication.loginRequired,
-    // authentication.authorize(["admin"]),
-    bookController.deleteBook
-  );
-
-/**
- * @route GET /books/discount
- * @description Get all discounted books
- * @body none
- * @access Public
- */
-
-router.get(
-    '/discount',
-    bookController.getDiscountBook
-  );
 
 /**
  * @route DELETE /books/:id

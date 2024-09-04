@@ -1,6 +1,5 @@
 const Category = require("../models/Category");
 const Book = require("../models/Book");
-const BookCategory = require ("../models/BookCategory");
 const { sendResponse, catchAsync, AppError } = require("../helpers/utils");
 const { StatusCodes } = require("http-status-codes");
 
@@ -132,11 +131,11 @@ categoryController.createCategory = catchAsync(async (req, res, next) => {
   
   categoryController.updateCategory = catchAsync(async (req, res, next) => {
     const { id } = req.params;
-    const { categoryName } = req.body;
+    const { categoryName, description, createdAt, updatedAt } = req.body;
   
     const category = await Category.findByIdAndUpdate(
       id,
-      { categoryName, isDeleted: false },
+      { categoryName, description, createdAt, updatedAt, isDeleted: false },
       { new: true }
     );
   

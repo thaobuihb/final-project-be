@@ -6,6 +6,8 @@ const logger = require('morgan');
 const cors = require("cors")
 const {sendResponse} = require("./helpers/utils")
 const routes = require('./routes/index');
+const { StatusCodes } = require("http-status-codes");
+
 
 const indexRouter = require('./routes/index');
 
@@ -28,7 +30,7 @@ app.use('/api', indexRouter);
 //Catch 404
 app.use((req, res, next) => {
     const err = new Error("Not Found");
-  err.statusCode = 404;
+  err.statusCode = StatusCodes.NOT_FOUND;
   next(err);
 })
 
@@ -37,7 +39,7 @@ app.use((err, req, res, next) => {
     if (err.isOperational) {
       return sendResponse(
         res,
-        err.statusCode ? err.statusCode : 500,
+        err.statusCode ? err.statusCode : StatusCodes.INTERNAL_SERVER_ERROR,
         false,
         null,
         { message: err.message },
@@ -46,7 +48,7 @@ app.use((err, req, res, next) => {
     } else {
       return sendResponse(
         res,
-        err.statusCode ? err.statusCode : 500,
+        err.statusCode ? err.statusCode : StatusCodes.INTERNAL_SERVER_ERROR,
         false,
         null,
         { message: err.message },

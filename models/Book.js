@@ -32,7 +32,8 @@ const bookSchema = new Schema(
       type: String,
       default: "",
     },
-    discountedPrice: { type: Number }, // giá giảm
+    discountRate: { type: Number, default: 0 },
+    discountedPrice: { type: Number, default: null },
     category: {
       type: Schema.Types.ObjectId,
       ref: "Category",

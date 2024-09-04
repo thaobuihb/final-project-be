@@ -11,7 +11,7 @@ const authentication = require("../middlewares/authentication");
  */
 router.post(
   "/:userId",
-//   authentication.loginRequired,
+   authentication.loginRequired,
   cartController.addBookToCart
 );
 
@@ -23,7 +23,7 @@ router.post(
  */
 router.put(
   "/:id",
-//   authentication.loginRequired,
+authentication.loginRequired,
   cartController.updateBookQuantityInCart
 );
 
@@ -35,7 +35,7 @@ router.put(
  */
 router.get(
   "/:userId",
-//   authentication.loginRequired,
+  authentication.loginRequired,
   cartController.getCart
 );
 
@@ -47,7 +47,7 @@ router.get(
  */
 router.delete(
   "/:id",
-//   authentication.loginRequired,
+  authentication.loginRequired,
   cartController.removeBookFromCart
 );
 

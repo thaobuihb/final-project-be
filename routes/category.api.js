@@ -1,54 +1,61 @@
 const express = require("express");
 const router = express.Router();
-const cartController = require("../controllers/cart.controller");
+const categoryController = require("../controllers/category.controller");
 const authentication = require("../middlewares/authentication");
 
 /**
- * @route POST /carts/:userId
- * @description Add a new book to the cart
- * @body { bookId, quantity }
- * @access User
+ * @route POST /category/
+ * @description Create a new category
+ * @body { bookId, categoryIds }
+ * @access Admin
  */
 router.post(
-  "/:userId",
+  "/",
   authentication.loginRequired,
-  cartController.addBookToCart
+  authentication.authorize(["admin"]),
+  categoryController.createCategory
 );
 
 /**
- * @route PUT /carts/:id
- * @description Update the quantity of a book in the cart
- * @body { bookId, quantity }
- * @access User
+ * @route GET /category/
+ * @description Get all category
+ * @body none
+ * @access user
+ */
+router.get("/", categoryController.getAllCategories);
+
+/**
+ * @route GET /category/
+ * @description Get category by ID
+ * @body none
+ * @access user
+ */
+router.get("/:id", categoryController.getAllCategories);
+
+/**
+ * @route PUT /bookCategory/
+ * @description Update category
+ * @body none
+ * @access Admin
  */
 router.put(
   "/:id",
   authentication.loginRequired,
-  cartController.updateBookQuantityInCart
+  authentication.authorize(["admin"]),
+  categoryController.updateCategory
 );
 
 /**
- * @route GET /carts/:userId
- * @description Get user's cart
+ * @route DELETE /category/:id
+ * @description DELETE a bookCategory
  * @body none
- * @access User
- */
-router.get(
-  "/:userId",
-  authentication.loginRequired,
-  cartController.getCart
-);
-
-/**
- * @route DELETE /carts/:id
- * @description Remove a book from the cart
- * @body none
- * @access User
+ * @access Admin
  */
 router.delete(
   "/:id",
   authentication.loginRequired,
-  cartController.removeBookFromCart
+  authentication.authorize(["admin"]),
+  categoryController.deleteCategory
 );
 
 module.exports = router;

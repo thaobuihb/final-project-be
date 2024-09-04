@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
 const { AppError, sendResponse } = require("../helpers/utils");
 const User = require("../models/User");
+const { StatusCodes } = require("http-status-codes");
 
 const authentication = {};
 
@@ -9,15 +10,15 @@ authentication.loginRequired = (req, res, next) => {
   try {
     const tokenString = req.headers.authorization;
     if (!tokenString)
-      throw new AppError(401, "Login Required", "Authentication Error");
+      throw new AppError(StatusCodes.UNAUTHORIZED, "Login Required", "Authentication Error");
 
     const token = tokenString.replace("Bearer ", "");
     jwt.verify(token, JWT_SECRET_KEY, async (err, payload) => {
       if (err) {
         if (err.name === "TokenExpiredError") {
-          throw new AppError(401, "Token expired", "Authentication Error");
+          throw new AppError(StatusCodes.UNAUTHORIZED, "Token expired", "Authentication Error");
         } else {
-          throw new AppError(401, "Token is invalid", "Authentication Error");
+          throw new AppError(StatusCodes.UNAUTHORIZED, "Token is invalid", "Authentication Error");
         }
       }
       // Fetch the user from the database based on payload._id
@@ -47,7 +48,7 @@ authentication.authorize = (roles) => {
       if (!roles.includes(userRole)) {
         return sendResponse(
           res,
-          403,
+          StatusCodes.FORBIDDEN,
           false,
           null,
           "Unauthorized",
@@ -59,7 +60,7 @@ authentication.authorize = (roles) => {
     } catch (error) {
       return sendResponse(
         res,
-        403,
+        StatusCodes.FORBIDDEN,
         false,
         null,
         "Authorization failed",
