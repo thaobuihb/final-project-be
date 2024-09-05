@@ -28,8 +28,8 @@ router.get(
 );
 
 /**
- * @route PUT /orders/:userId/:orderid
- * @description Update a order
+ * @route GET /orders/:userId/:orderid
+ * @description Get a order of a user
  * @body { status }
  * @access User , amdin
  */
@@ -45,23 +45,37 @@ router.get(
  * @body none
  * @access user
  */
-// router.put("/:orderId/cancel", orderController.cancelOrder);
+router.put(
+  "/:userId/:orderId",
+  authentication.loginRequired,
+  orderController.updateOrderByUser
+);
 
 /**
  * @route GET /orders/
- * @description GET all order
+ * @description GET all order by admin
  * @body none
  * @access admin
  */
-// router.get("/", orderController.getAllOrders);
+router.get(
+  "/",
+  authentication.loginRequired,
+  authentication.authorize(["admin"]),
+  orderController.getAllOrders
+);
+
 /**
- * @route  Put/orders/:id
+ * @route  Put/orders/:orderId
  * @description Update Order for Admin
  * @body none
  * @access Admin
  */
-// Update Order for Admin
-// router.put("/:orderId", orderController.updateOrderAD);
+router.put(
+  "/:orderId",
+  authentication.loginRequired,
+  authentication.authorize(["admin"]),
+  orderController.updateOrderAD
+);
 
 /**
  * @route DELETE /orders/:id
@@ -69,6 +83,11 @@ router.get(
  * @body none
  * @access Admin
  */
-// router.delete("/:orderId", orderController.deleteOrder);
+router.delete(
+  "/:userId/:orderId",
+  authentication.loginRequired,
+  authentication.authorize(["admin"]),
+  orderController.deleteOrder
+);
 
 module.exports = router;
