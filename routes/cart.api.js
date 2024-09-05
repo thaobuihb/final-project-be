@@ -12,7 +12,7 @@ const authentication = require("../middlewares/authentication");
 router.post(
   "/:userId",
    authentication.loginRequired,
-  cartController.addBookToCart
+  cartController.addOrUpdateBookToCart
 );
 
 /**
@@ -21,18 +21,7 @@ router.post(
  * @body { bookId, quantity }
  * @access User
  */
-router.put(
-  "/:id",
-authentication.loginRequired,
-  cartController.updateBookQuantityInCart
-);
 
-/**
- * @route GET /carts/:userId
- * @description Get user's cart
- * @body none
- * @access User
- */
 router.get(
   "/:userId",
   authentication.loginRequired,

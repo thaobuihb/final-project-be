@@ -5,8 +5,8 @@ const { StatusCodes } = require("http-status-codes");
 
 const cartController = {};
 
-// Add a new book to the cart
-cartController.addBookToCart = catchAsync(async (req, res) => {
+// Add or update a book to the cart
+cartController.addOrUpdateBookToCart = catchAsync(async (req, res) => {
   const { userId } = req.params;
   const { bookId, quantity, price } = req.body;
 
@@ -61,83 +61,6 @@ cartController.addBookToCart = catchAsync(async (req, res) => {
     null,
     "Book added to cart successfully"
   );
-});
-
-// Update the quantity of a book in the cart
-cartController.updateBookQuantityInCart = catchAsync(async (req, res) => {
-  const { userId } = req.params;
-  const { bookId, quantity, price } = req.body;
-
-  if (!userId) {
-    return sendResponse(
-      res,
-      StatusCodes.BAD_REQUEST,
-      false,
-      null,
-      "User ID is required",
-      "Cart update failed"
-    );
-  }
-
-  if (!bookId) {
-    return sendResponse(
-      res,
-      StatusCodes.BAD_REQUEST,
-      false,
-      null,
-      "Book ID is required",
-      "Cart update failed"
-    );
-  }
-
-  let cart = await Cart.findOne({ userId });
-  
-  if (!cart) {
-    // Tạo giỏ hàng mới nếu chưa tồn tại
-    cart = new Cart({
-      userId: userId,
-      books: [
-        { bookId, quantity: parseInt(quantity), price: parseFloat(price) },
-      ],
-    });
-  } else {
-    // Cập nhật giỏ hàng hiện có
-    let bookExists = false;
-
-    cart.books = cart.books.map((book) => {
-      if (book.bookId.toString() === bookId) {
-        if (parseInt(quantity) === 0) {
-          return null;  // Xóa sách nếu số lượng là 0
-        } else {
-          bookExists = true;
-          return {
-            ...book,
-            quantity: parseInt(quantity),
-            price: parseFloat(price),
-          };
-        }
-      }
-      return book;
-    });
-
-    cart.books = cart.books.filter((book) => book !== null);
-
-    if (!bookExists && parseInt(quantity) > 0) {
-      cart.books.push({
-        bookId,
-        quantity: parseInt(quantity),
-        price: parseFloat(price),
-      });
-    }
-  }
-
-  // Lưu giỏ hàng sau khi cập nhật
-  await cart.save();
-
-  // Lấy lại giỏ hàng sau khi cập nhật để trả về
-  cart = await Cart.findOne({ userId }).populate('books.bookId'); 
-
-  return sendResponse(res, StatusCodes.OK, true, cart, null, "Cart updated and retrieved successfully");
 });
 
 // Get the user's cart
