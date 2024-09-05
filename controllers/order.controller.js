@@ -12,22 +12,15 @@ orderController.createOrder = catchAsync(async (req, res, next) => {
   const { books, shippingAddress, paymentMethods } = req.body;
 
   const user = await User.findById(userId);
-
   if (!user) {
     throw new AppError(StatusCodes.NOT_FOUND, "User not found", "Create Order Error");
   }
 
   const orderedBooks = [];
-
   for (const { bookId, quantity } of books) {
     const book = await Book.findById(bookId);
-
     if (!book) {
-      throw new AppError(
-        StatusCodes.NOT_FOUND,
-        `Book not found: ${bookId}`,
-        "Create Order Error"
-      );
+      throw new AppError(StatusCodes.NOT_FOUND, `Book not found: ${bookId}`, "Create Order Error");
     }
 
     const name = book.name;
@@ -62,12 +55,8 @@ orderController.createOrder = catchAsync(async (req, res, next) => {
   sendResponse(res, StatusCodes.CREATED, true, order, null, "Order created successfully");
 });
 
-orderController.getOrder = catchAsync(async (req, res, next) => {
-  const orders = await Order.find({ isDeleted: false });
-  return sendResponse(res, StatusCodes.OK, true, orders, "Orders retrieved successfully");
-});
 
-orderController.getAllOrder = catchAsync(async (req, res, next) => {
+orderController.getOrdersByUserId = catchAsync(async (req, res, next) => {
   const userId = req.params.userId;
 
   const orders = await Order.find({ userId, isDeleted: false });
@@ -78,7 +67,7 @@ orderController.getAllOrder = catchAsync(async (req, res, next) => {
       if (foundBook) book.name = foundBook.name;
     }
   }
-  sendResponse(res, StatusCodes.OK, true, orders, null, "Orders retrieved successfully");
+  sendResponse(res, 200, true, orders, null, "Orders retrieved successfully");
 });
 
 orderController.getOrderById = catchAsync(async (req, res, next) => {
@@ -92,6 +81,10 @@ orderController.getOrderById = catchAsync(async (req, res, next) => {
 
   sendResponse(res, StatusCodes.OK, true, order, null, "Order retrieved successfully");
 });
+
+
+
+
 
 orderController.updateOrder = catchAsync(async (req, res, next) => {
   const { userId, orderId } = req.params;

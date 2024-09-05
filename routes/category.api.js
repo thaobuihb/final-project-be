@@ -20,7 +20,7 @@ router.post(
  * @route GET /category/
  * @description Get all category
  * @body none
- * @access user
+ * @access Public
  */
 router.get("/", categoryController.getAllCategories);
 
@@ -28,7 +28,7 @@ router.get("/", categoryController.getAllCategories);
  * @route GET /category/
  * @description Get category by ID
  * @body none
- * @access user
+ * @access Public
  */
 router.get("/:id", categoryController.getAllCategories);
 

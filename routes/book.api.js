@@ -12,7 +12,7 @@ const authentication = require("../middlewares/authentication");
 router.post(
     '/',
     authentication.loginRequired,
-    // authentication.authorize(["admin"]),
+    authentication.authorize(["admin"]),
     bookController.createBook
   );
   
@@ -25,7 +25,6 @@ router.post(
  */
 router.get(
     '/',
-    // authentication.loginRequired,
     bookController.getAllBooks
   );
 
@@ -39,7 +38,6 @@ router.get(
 
 router.get(
     '/:id',
-    // authentication.loginRequired,
     bookController.getBookById
   );
 
@@ -54,8 +52,8 @@ router.get(
 
 router.put(
     '/:id',
-    // authentication.loginRequired,
-    // authentication.authorize(["admin"]),
+    authentication.loginRequired,
+    authentication.authorize(["admin"]),
     bookController.updateBook
   );
 
