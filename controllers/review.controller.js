@@ -7,12 +7,12 @@ const reviewController = {};
 
 // Create a new review
 reviewController.createReview = catchAsync(async (req, res, next) => {
-  const { id } = req.params;
+  const { userId } = req.params;
   const { bookId, comment, name } = req.body;
 
   const review = new Review({
     bookId,
-    userId: id,
+    userId,
     name,
     comment,
   });
@@ -31,8 +31,7 @@ reviewController.createReview = catchAsync(async (req, res, next) => {
 
 // Route for getting all review
 reviewController.getReview = catchAsync(async (req, res, next) => {
-  const { id } = req.params;
-  const review = await Review.find({ userId: id, isDeleted: false });
+  const review = await Review.find({ isDeleted: false });
 
   if (!review) {
     throw new AppError(StatusCodes.NOT_FOUND, "Can not get Review", "Review Error");
@@ -45,10 +44,10 @@ reviewController.getReview = catchAsync(async (req, res, next) => {
 // Update a review
 reviewController.updateReview = catchAsync(async (req, res, next) => {
   const { reviewId, comment } = req.body;
-  const { id } = req.params;
+  const { userId } = req.params;
 
   const review = await Review.findOneAndUpdate(
-    { _id: reviewId, userId: id, isDeleted: false },
+    { _id: reviewId, userId, isDeleted: false },
     { comment },
     { new: true }
   );
@@ -62,10 +61,10 @@ reviewController.updateReview = catchAsync(async (req, res, next) => {
 
 // Delete a review
 reviewController.deleteReview = catchAsync(async (req, res, next) => {
-  const { id, reviewId } = req.params;
+  const { userId, reviewId } = req.params;
 
   const review = await Review.findOneAndUpdate(
-    { _id: reviewId, userId: id, isDeleted: false },
+    { _id: reviewId, userId, isDeleted: false },
     { isDeleted: true },
     { new: true }
   );

@@ -1,17 +1,7 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const reviewController = require("../controllers/review.controller")
-
-
-/**
- * @route GET /reviews/:id
- * @description Get all review of a user
- * @body none
- * @access Public
- */
-router.get("/:id", reviewController.getReview);
-
-
+const reviewController = require("../controllers/review.controller");
+const authentication = require("../middlewares/authentication");
 
 /**
  * @route POST /reviews/:id
@@ -19,10 +9,19 @@ router.get("/:id", reviewController.getReview);
  * @body { bookId, comment }
  * @access User
  */
-router.post("/:id", reviewController.createReview);
+router.post(
+  "/:userId",
+  authentication.loginRequired,
+  reviewController.createReview
+);
 
-
-
+/**
+ * @route GET /reviews/:id
+ * @description Get all review of a user
+ * @body none
+ * @access Public
+ */
+router.get("/", reviewController.getReview);
 
 /**
  * @route PUT /reviews/:id
@@ -30,9 +29,11 @@ router.post("/:id", reviewController.createReview);
  * @body { reviewId, comment }
  * @access User
  */
-router.put("/:id", reviewController.updateReview);
-
-
+router.put(
+  "/:userId",
+  authentication.loginRequired,
+  reviewController.updateReview
+);
 
 /**
  * @route DELETE /reviews/:id
@@ -40,7 +41,10 @@ router.put("/:id", reviewController.updateReview);
  * @body { reviewId }
  * @access User
  */
-router.delete("/:id/:reviewId", reviewController.deleteReview);
+router.delete(
+  "/:userId/:reviewId",
+  authentication.loginRequired,
+  reviewController.deleteReview
+);
 
-
-module.exports = router
+module.exports = router;
