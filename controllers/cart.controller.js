@@ -1,55 +1,97 @@
 const Cart = require("../models/Cart");
+const Book = require("../models/Book");
 const { sendResponse, catchAsync, AppError } = require("../helpers/utils");
 const { StatusCodes } = require("http-status-codes");
-
 
 const cartController = {};
 
 // Add or update a book to the cart
-cartController.addOrUpdateBookToCart = catchAsync(async (req, res) => {
+cartController.addOrUpdateBookInCart = catchAsync(async (req, res) => {
   const { userId } = req.params;
-  const { bookId, quantity, price } = req.body;
+  const { bookId, quantity } = req.body;
 
-  if (!bookId || !quantity || !price) {
+  if (!bookId) {
     return sendResponse(
       res,
       StatusCodes.BAD_REQUEST,
       false,
       null,
-      "Book ID, quantity, and price are required",
-      "Add to cart failed"
+      "Book ID is required",
+      "Cart update failed"
     );
   }
 
-  // Find or create a cart for the user
+  const book = await Book.findById(bookId);
+  if (!book) {
+    return sendResponse(
+      res,
+      StatusCodes.NOT_FOUND,
+      false,
+      null,
+      "Book not found",
+      "Cart update failed"
+    );
+  }
+  const originalPrice = book.price;
   let cart = await Cart.findOne({ userId });
 
   if (!cart) {
-    cart = new Cart({
-      userId,
-      books: [
-        { bookId, quantity: parseInt(quantity), price: parseFloat(price) },
-      ],
-    });
-  } else {
-    // Check if the book already exists in the cart
-    const existingBookIndex = cart.books.findIndex(
-      (book) => book.bookId.toString() === bookId
-    );
-
-    if (existingBookIndex >= 0) {
-      // Update quantity if book already exists
-      cart.books[existingBookIndex].quantity = parseInt(quantity);
-      cart.books[existingBookIndex].price = parseFloat(price);
+    if (quantity > 0) {
+      cart = new Cart({
+        userId,
+        books: [
+          {
+            bookId,
+            quantity: parseInt(quantity),
+            originalPrice,
+            price: parseFloat(originalPrice) * parseInt(quantity),
+          },
+        ],
+      });
     } else {
-      // Add new book to cart
+      return sendResponse(
+        res,
+        StatusCodes.BAD_REQUEST,
+        false,
+        null,
+        "Cannot add a book with quantity 0",
+        "Cart update failed"
+      );
+    }
+  } else {
+    let bookExists = false;
+
+    cart.books = cart.books.map((bookItem) => {
+      if (bookItem.bookId.toString() === bookId) {
+        if (parseInt(quantity) === 0) {
+          return null;
+        } else {
+          bookExists = true;
+          return {
+            ...bookItem,
+            quantity: parseInt(quantity),
+            price: parseFloat(originalPrice) * parseInt(quantity),
+          };
+        }
+      }
+      return bookItem;
+    });
+
+    cart.books = cart.books.filter((book) => book !== null);
+
+    if (!bookExists && parseInt(quantity) > 0) {
       cart.books.push({
         bookId,
         quantity: parseInt(quantity),
-        price: parseFloat(price),
+        originalPrice,
+        totalPrice: parseFloat(originalPrice) * parseInt(quantity),
       });
     }
   }
+
+  cart.totalPrice = cart.books.reduce((total, bookItem) => {
+    return total + bookItem.price;
+  }, 0);
 
   await cart.save();
 
@@ -57,9 +99,41 @@ cartController.addOrUpdateBookToCart = catchAsync(async (req, res) => {
     res,
     StatusCodes.OK,
     true,
-    cart.books,
+    cart,
     null,
-    "Book added to cart successfully"
+    "Cart updated successfully"
+  );
+});
+
+//Delete cart
+cartController.clearCart = catchAsync(async (req, res) => {
+  const { userId } = req.params;
+
+  let cart = await Cart.findOne({ userId });
+
+  if (!cart) {
+    return sendResponse(
+      res,
+      StatusCodes.NOT_FOUND,
+      false,
+      null,
+      "Cart not found",
+      "Clear cart failed"
+    );
+  }
+
+  cart.books = [];
+  cart.totalPrice = 0;
+
+  await cart.save();
+
+  return sendResponse(
+    res,
+    StatusCodes.OK,
+    true,
+    null,
+    null,
+    "Cart cleared successfully"
   );
 });
 
@@ -67,7 +141,7 @@ cartController.addOrUpdateBookToCart = catchAsync(async (req, res) => {
 cartController.getCart = catchAsync(async (req, res) => {
   const { userId } = req.params;
 
-  const cart = await Cart.findOne({ userId }).populate("books.bookId"); // Populate to get detailed book information
+  const cart = await Cart.findOne({ userId }).populate("books.bookId");
 
   if (!cart) {
     throw new AppError("Cart not found", StatusCodes.NOT_FOUND);
@@ -80,46 +154,6 @@ cartController.getCart = catchAsync(async (req, res) => {
     cart.books,
     null,
     "Cart retrieved successfully"
-  );
-});
-
-// Remove a book from the cart
-cartController.removeBookFromCart = catchAsync(async (req, res) => {
-  const { id } = req.params; // Book ID
-  const { userId } = req.query; // User ID from query parameters
-
-  if (!userId) {
-    return sendResponse(
-      res,
-      StatusCodes.BAD_REQUEST,
-      false,
-      null,
-      "User ID is required",
-      "Removal failed"
-    );
-  }
-
-  // Find the cart for the given userId
-  let cart = await Cart.findOne({ userId });
-
-  if (!cart) {
-    throw new AppError("Cart not found", StatusCodes.NOT_FOUND);
-  }
-
-  // Remove the book from the cart
-  cart.books = cart.books.filter(
-    (book) => book.bookId.toString() !== id
-  );
-
-  await cart.save();
-
-  return sendResponse(
-    res,
-    StatusCodes.OK,
-    true,
-    cart.books,
-    null,
-    "Book removed from cart successfully"
   );
 });
 

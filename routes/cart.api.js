@@ -5,19 +5,19 @@ const authentication = require("../middlewares/authentication");
 
 /**
  * @route POST /carts/:userId
- * @description Add a new book to the cart
+ * @description Add/update book in the cart
  * @body { bookId, quantity }
  * @access User
  */
 router.post(
   "/:userId",
    authentication.loginRequired,
-  cartController.addOrUpdateBookToCart
+  cartController.addOrUpdateBookInCart
 );
 
 /**
- * @route PUT /carts/:id
- * @description Update the quantity of a book in the cart
+ * @route GET /carts/:userId
+ * @description Get all cart of a user
  * @body { bookId, quantity }
  * @access User
  */
@@ -29,15 +29,11 @@ router.get(
 );
 
 /**
- * @route DELETE /carts/:id
- * @description Remove a book from the cart
- * @body none
+ * @route DELETE /carts/:userId
+ * @description Delete cart
+ * @body {}
  * @access User
  */
-router.delete(
-  "/:id",
-  authentication.loginRequired,
-  cartController.removeBookFromCart
-);
+router.delete("/:userId", cartController.clearCart);
 
 module.exports = router;
