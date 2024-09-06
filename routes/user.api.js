@@ -33,7 +33,7 @@ router.post(
 /**
  * @route GET /users?page=1&limit=10
  * @description get all User with pagination
- * @access login required
+ * @access Admin
  */
 router.get("/", authentication.loginRequired, authentication.authorize(["admin"]), userController.getUsers);
 

@@ -16,7 +16,7 @@ router.post(
 );
 
 /**
- * @route GET /reviews/:id
+ * @route GET /reviews/
  * @description Get all review of a user
  * @body none
  * @access Public

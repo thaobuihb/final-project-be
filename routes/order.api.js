@@ -28,7 +28,7 @@ router.get(
 );
 
 /**
- * @route GET /orders/:userId/:orderid
+ * @route GET /orders/:userId/:orderId
  * @description Get a order of a user
  * @body { status }
  * @access User , amdin
@@ -78,7 +78,7 @@ router.put(
 );
 
 /**
- * @route DELETE /orders/:id
+ * @route DELETE /orders/:orderId
  * @description delete an order by id
  * @body none
  * @access Admin
