@@ -53,13 +53,6 @@ const userSchema = new Schema(
     },
     phone: {
       type: String,
-      // validate: {
-      //   validator: function (v) {
-      //     return /^\d{10}$/.test(v);
-      //   },
-      //   message: (props) =>
-      //     `${props.value} not a valid phone number! The phone number must have exactly 10 digits.`,
-      // },
       default:""
     },
     isDeleted: {
