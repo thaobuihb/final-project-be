@@ -5,25 +5,35 @@ const { sendResponse, catchAsync, AppError } = require("../helpers/utils");
 const mongoose = require("mongoose");
 const { ObjectId } = require("mongoose").Types;
 const { StatusCodes } = require("http-status-codes");
-const { createBookValidator, validate } = require("../middlewares/validators");
+const validators = require("../middlewares/validators");
 
 const bookController = {};
 
 // Create book
 bookController.createBook = [
-  validate(createBookValidator),
+  validators.validate(validators.createBookValidator),
   catchAsync(async (req, res, next) => {
-    const { name, author, price, publicationDate, img, description, categoryId } = req.body;
+    const {
+      name,
+      author,
+      price,
+      publicationDate,
+      img,
+      description,
+      categoryId,
+    } = req.body;
 
     // Validate categoryId
-    if (!ObjectId.isValid(categoryId)) {
-      throw new AppError(StatusCodes.BAD_REQUEST, "Invalid category ID", "Create Book Error");
-    }
+    validators.checkObjectId(categoryId);
 
     // Find the category by ID
     const category = await Category.findById(categoryId);
     if (!category) {
-      throw new AppError(StatusCodes.NOT_FOUND, "Category not found", "Create Book Error");
+      throw new AppError(
+        StatusCodes.NOT_FOUND,
+        "Category not found",
+        "Create Book Error"
+      );
     }
 
     // Create a new book with the category reference
@@ -38,8 +48,15 @@ bookController.createBook = [
       category: category._id, // Reference category by ID
     });
 
-    sendResponse(res, StatusCodes.OK, true, book, null, "Create new book successful");
-  })
+    sendResponse(
+      res,
+      StatusCodes.OK,
+      true,
+      book,
+      null,
+      "Create new book successful"
+    );
+  }),
 ];
 
 //Get all books
@@ -114,24 +131,31 @@ bookController.getAllBooks = catchAsync(async (req, res, next) => {
   ]);
 
   const { paginatedBooks, totalCount } = result[0];
-  const totalPages = paginatedBooks.length > 0 ? Math.ceil(totalCount[0].total / limitNumber) : 0;
+  const totalPages =
+    paginatedBooks.length > 0
+      ? Math.ceil(totalCount[0].total / limitNumber)
+      : 0;
 
   const response = {
     books: paginatedBooks,
     totalPages,
   };
 
-  sendResponse(res, StatusCodes.OK, true, response, null, "Books retrieved successfully");
+  sendResponse(
+    res,
+    StatusCodes.OK,
+    true,
+    response,
+    null,
+    "Books retrieved successfully"
+  );
 });
 
 // Get book by id
 bookController.getBookById = catchAsync(async (req, res, next) => {
   const { id: bookId } = req.params;
 
-  // Validate bookId
-  if (!ObjectId.isValid(bookId)) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "Invalid book ID", "Get Book Error");
-  }
+  validators.checkObjectId(bookId);
 
   const [book] = await Book.aggregate([
     {
@@ -162,13 +186,24 @@ bookController.getBookById = catchAsync(async (req, res, next) => {
   ]);
 
   if (!book) {
-    throw new AppError(StatusCodes.NOT_FOUND, "Book not found", "Get Book Error");
+    throw new AppError(
+      StatusCodes.NOT_FOUND,
+      "Book not found",
+      "Get Book Error"
+    );
   }
 
   const reviews = await Review.find({ bookId: book._id, isDeleted: false });
   book.reviews = reviews;
 
-  sendResponse(res, StatusCodes.OK, true, book, null, "Book retrieved successfully");
+  sendResponse(
+    res,
+    StatusCodes.OK,
+    true,
+    book,
+    null,
+    "Book retrieved successfully"
+  );
 });
 
 // Update a book
@@ -176,11 +211,13 @@ bookController.updateBook = catchAsync(async (req, res, next) => {
   const bookId = req.params.id;
   const updateData = req.body;
 
+  validators.checkObjectId(bookId);
+
   if (updateData.discountRate !== undefined) {
-  
     const originalPrice = updateData.price;
     const discountRate = updateData.discountRate;
-    const discountedPrice = originalPrice - (originalPrice * discountRate) / 100;
+    const discountedPrice =
+      originalPrice - (originalPrice * discountRate) / 100;
     updateData.discountedPrice = discountedPrice;
   }
 
@@ -190,19 +227,27 @@ bookController.updateBook = catchAsync(async (req, res, next) => {
     { new: true }
   );
   if (!book) {
-    throw new AppError(StatusCodes.NOT_FOUND, "Book not found", "Update Book Error");
+    throw new AppError(
+      StatusCodes.NOT_FOUND,
+      "Book not found",
+      "Update Book Error"
+    );
   }
-  sendResponse(res, StatusCodes.OK, true, book, null, "Book updated successfully");
+  sendResponse(
+    res,
+    StatusCodes.OK,
+    true,
+    book,
+    null,
+    "Book updated successfully"
+  );
 });
 
 // Delete a book
 bookController.deleteBook = catchAsync(async (req, res, next) => {
   const { id: bookId } = req.params;
+  validators.checkObjectId(bookId);
 
-  // Validate bookId
-  if (!ObjectId.isValid(bookId)) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "Invalid book ID", "Delete Book Error");
-  }
 
   const book = await Book.findByIdAndUpdate(
     bookId,
@@ -211,10 +256,21 @@ bookController.deleteBook = catchAsync(async (req, res, next) => {
   );
 
   if (!book) {
-    throw new AppError(StatusCodes.NOT_FOUND, "Book not found", "Delete Book Error");
+    throw new AppError(
+      StatusCodes.NOT_FOUND,
+      "Book not found",
+      "Delete Book Error"
+    );
   }
 
-  sendResponse(res, StatusCodes.OK, true, book, null, "Book deleted successfully");
+  sendResponse(
+    res,
+    StatusCodes.OK,
+    true,
+    book,
+    null,
+    "Book deleted successfully"
+  );
 });
 
 module.exports = bookController;
