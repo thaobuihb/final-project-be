@@ -73,7 +73,7 @@ userController.updateUser = catchAsync(async (req, res, next) => {
   const currentUserId = req.userId;
   const userId = req.params.id;
   if(currentUserId !== userId)
-  throw new AppError(StatusCodes.BAD_REQUEST, "Permission required", " Update Profile error")
+  throw new AppError(StatusCodes.BAD_REQUEST, "Permission required", " Profile Update error")
   const {
     name,
     email,
