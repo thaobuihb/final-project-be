@@ -1,13 +1,13 @@
 # BOOK STORE
 Cửa hàng sách trực tuyến của tôi là ứng dụng cung cấp một bộ sưu tập phong phú các cuốn sách thuộc nhiều thể loại khác nhau, cho phép người dùng dễ dàng tìm kiếm, đặt mua và thanh toán sách theo ý muốn.
 
-## Xác thực
+## Auth
 
 - Là người dùng, tôi có thể đăng nhập bằng email và mật khẩu của mình.
 - Với tư cách là người dùng, tôi có thể đăng ký tài khoản mới bằng email và mật khẩu.
 - Là người dùng, tôi có thể duy trì trạng thái đăng nhập sau khi làm mới trang.
 
-## Người dùng
+## User
 
 - Là quản trị viên, tôi có thể lấy được tất cả người dùng đã đăng ký trên hệ thống.
 - Với tư cách là quản trị viên, tôi có thể xóa một người dùng.
