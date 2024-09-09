@@ -350,4 +350,4 @@ Cửa hàng sách trực tuyến của tôi là ứng dụng cung cấp một b�
  */
 
 
-## EEntity Relationship Diagram
+## Entity Relationship Diagram
