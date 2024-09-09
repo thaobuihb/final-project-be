@@ -351,3 +351,4 @@ Cửa hàng sách trực tuyến của tôi là ứng dụng cung cấp một b�
 
 
 ## Entity Relationship Diagram
+[Alt text](./screenshot.png)
