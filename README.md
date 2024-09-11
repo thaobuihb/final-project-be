@@ -1,5 +1,6 @@
 # BOOK STORE
-Cửa hàng sách trực tuyến của tôi là ứng dụng cung cấp một bộ sưu tập phong phú các cuốn sách thuộc nhiều thể loại khác nhau, cho phép người dùng dễ dàng tìm kiếm, đặt mua và thanh toán sách theo ý muốn.
+Cửa hàng sách trực tuyến của tôi là ứng dụng cung cấp một bộ sưu tập phong phú các cuốn sách thuộc nhiều thể loại khác nhau, cho phép người dùng dễ dàng tìm kiếm, đặt mua sách theo ý muốn.
+Tính năng hy vọng sẽ phát triển trong tương lai là cho phép người mua sách thanh toán linh hoạt bằng nhiều hình thức khác nhau.
 
 ## Auth
 
