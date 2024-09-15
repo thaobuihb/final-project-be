@@ -1,3 +1,24 @@
+- [User Story](#book-store)
+
+    - [Authentication](#auth)
+    - [User](#user)
+    - [Book](#book)
+    - [Category](#catogery)
+    - [Review](#review)
+    - [Cart](#cart)
+    - [Order](#order)
+
+- [API endpoints](#api-endpoints)
+    - [Auth API](#auth-api)
+    - [User API](#user-apis)
+    - [Book API](#book-apis)
+    - [Category API](#category-apis)
+    - [Review API](#review-apis)
+    - [Cart API](#cart-apis)
+    - [Order API](#order-apis)
+
+- [Entity Relationship Diagram](#entity-relationship-diagram)
+
 # BOOK STORE
 Cửa hàng sách trực tuyến của tôi là ứng dụng cung cấp một bộ sưu tập phong phú các cuốn sách thuộc nhiều thể loại khác nhau, cho phép người dùng dễ dàng tìm kiếm, đặt mua sách theo ý muốn.
 Tính năng hy vọng sẽ phát triển trong tương lai là cho phép người mua sách thanh toán linh hoạt bằng nhiều hình thức khác nhau.
@@ -23,7 +44,22 @@ Tính năng hy vọng sẽ phát triển trong tương lai là cho phép ngườ
 - Là người dùng hoặc quản trị viên, tôi có thể xem danh sách tất cả sách có sẵn trên cửa hàng.
 - Là người dùng hoặc quản trị viên, tôi có thể xem chi tiết của một cuốn sách cụ thể.
 
-## Card
+## Catogery
+
+- Là người dùng, tôi có thể xem tất cả các danh mục sách có sẵn, giúp dễ dàng tìm kiếm sách theo thể loại.
+- Là người dùng, tôi có thể xem các sách thuộc một danh mục cụ thể, giúp tôi tìm kiếm sách theo thể loại yêu thích.
+- Là quản trị viên, tôi có thể tạo một danh mục sách mới để phân loại sách theo các thể loại mới.
+- Là quản trị viên, tôi có thể cập nhật một danh mục.
+- Là quản trị viên, tôi có thể xóa một danh mục.
+
+## Review
+
+- Là người dùng, tôi có thể tạo nhận xét về một cuốn sách.
+- Là người dùng, tôi có thể xem các bình luận về cuốn sách mà không cần đăng nhập.
+- Là người dùng, tôi có thể chỉnh sửa các nhận xét của mình để cập nhật ý kiến hoặc thông tin mới.
+- Là người dùng, tôi có thể xóa nhận xét của mình.
+
+## Cart
 
 - Là người dùng, tôi có thể xem giỏ hàng của mình.
 - Là người dùng, tôi có thể cập nhật sách vào giỏ hàng của mình (tăng giảm số lượng).
@@ -38,22 +74,6 @@ Tính năng hy vọng sẽ phát triển trong tương lai là cho phép ngườ
 - Là người dùng, tôi có thể xem tất cả các đơn hàng của mình.
 - Là người dùng, tôi có thể xem chi tiết của một đơn hàng cụ thể để biết thêm thông tin về sách và trạng thái đơn hàng.
 - Là người dùng, tôi có thể hủy đơn hàng của mình nếu đơn hàng chưa được thanh toán hoặc gửi đi.
-
-## Review
-
-- Là người dùng, tôi có thể tạo nhận xét về một cuốn sách.
-- Là người dùng, tôi có thể xem các bình luận về cuốn sách mà không cần đăng nhập.
-- Là người dùng, tôi có thể chỉnh sửa các nhận xét của mình để cập nhật ý kiến hoặc thông tin mới.
-- Là người dùng, tôi có thể xóa nhận xét của mình.
-
-## Catogery
-
-- Là người dùng, tôi có thể xem tất cả các danh mục sách có sẵn, giúp dễ dàng tìm kiếm sách theo thể loại.
-- Là người dùng, tôi có thể xem các sách thuộc một danh mục cụ thể, giúp tôi tìm kiếm sách theo thể loại yêu thích.
-- Là quản trị viên, tôi có thể tạo một danh mục sách mới để phân loại sách theo các thể loại mới.
-- Là quản trị viên, tôi có thể cập nhật một danh mục.
-- Là quản trị viên, tôi có thể xóa một danh mục.
-
 
 # API endpoints
 
@@ -256,7 +276,7 @@ Tính năng hy vọng sẽ phát triển trong tương lai là cho phép ngườ
  */
 ```
 
-## Cart api
+## Cart apis
 
 ```javaScript
 /**

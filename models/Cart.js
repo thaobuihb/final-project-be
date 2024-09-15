@@ -19,5 +19,13 @@ const cartSchema = new Schema({
 },{ timestamps: true, }
   );
 
+  cartSchema.methods.toJSON = function () {
+    const cart = this._doc;
+    delete cart.userId;
+    delete cart.isDeleted;
+    return cart;
+  };
+  
+
   const Cart = mongoose.model("Cart", cartSchema);
 module.exports = Cart;

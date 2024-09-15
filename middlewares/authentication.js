@@ -28,6 +28,7 @@ authentication.loginRequired = (req, res, next) => {
       //   }
 
       req.role = payload.role;
+      req.userId = payload._id;
       next();
     });
   } catch (error) {

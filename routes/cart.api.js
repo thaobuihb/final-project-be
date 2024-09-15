@@ -10,7 +10,7 @@ const authentication = require("../middlewares/authentication");
  * @access User
  */
 router.post(
-  "/:userId",
+  "/",
   authentication.loginRequired,
   cartController.addOrUpdateBookInCart
 );
