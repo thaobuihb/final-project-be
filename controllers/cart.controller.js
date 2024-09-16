@@ -21,7 +21,6 @@ cartController.addOrUpdateBookInCart = catchAsync(async (req, res) => {
     );
   }
 
-  // Tìm sách theo ID
   const book = await Book.findById(bookId);
   if (!book) {
     return sendResponse(
@@ -34,11 +33,9 @@ cartController.addOrUpdateBookInCart = catchAsync(async (req, res) => {
     );
   }
 
-  // Giá gốc và giá giảm (nếu có)
   const originalPrice = book.price;
   const discountPrice = book.discountedPrice || originalPrice;
   
-  // Tính discountRate (mức giảm giá)
   const discountRate = book.discountRate
     ? ((originalPrice - book.discountedPrice) / originalPrice) * 100 
     : 0;
@@ -54,12 +51,12 @@ cartController.addOrUpdateBookInCart = catchAsync(async (req, res) => {
         books: [
           {
             bookId,
-            name, // Thêm tên sách vào
+            name, 
             quantity: parseInt(quantity),
             originalPrice,
-            discountPrice, // Giá đã giảm (nếu có)
-            discountRate,  // Ghi giảm giá = 0 nếu không có
-            totalPrice: parseFloat(discountPrice) * parseInt(quantity), // Tổng tiền theo giá đã giảm
+            discountPrice, 
+            discountRate, 
+            totalPrice: parseFloat(discountPrice) * parseInt(quantity), 
           },
         ],
       });
@@ -76,44 +73,40 @@ cartController.addOrUpdateBookInCart = catchAsync(async (req, res) => {
   } else {
     let bookExists = false;
 
-    // Cập nhật nếu sách đã có trong giỏ hàng
     cart.books = cart.books.map((bookItem) => {
       if (bookItem.bookId.toString() === bookId) {
         if (parseInt(quantity) === 0) {
-          return null; // Xóa sách nếu số lượng bằng 0
+          return null; 
         } else {
           bookExists = true;
           return {
             ...bookItem,
-            name, // Đảm bảo tên sách được cập nhật
+            name, 
             quantity: parseInt(quantity),
-            discountPrice, // Cập nhật giá đã giảm
-            discountRate,  // Cập nhật giảm giá
-            totalPrice: parseFloat(discountPrice) * parseInt(quantity), // Tính tổng tiền
+            discountPrice, 
+            discountRate, 
+            totalPrice: parseFloat(discountPrice) * parseInt(quantity), 
           };
         }
       }
       return bookItem;
     });
 
-    // Xóa sách có số lượng bằng 0
     cart.books = cart.books.filter((book) => book !== null);
 
-    // Thêm sách mới nếu chưa tồn tại trong giỏ hàng
     if (!bookExists && parseInt(quantity) > 0) {
       cart.books.push({
         bookId,
-        name, // Thêm tên sách vào
+        name, 
         quantity: parseInt(quantity),
         originalPrice,
-        discountPrice, // Giá đã giảm (nếu có)
-        discountRate,  // Ghi giảm giá = 0 nếu không có
-        totalPrice: parseFloat(discountPrice) * parseInt(quantity), // Tính tổng tiền
+        discountPrice, 
+        discountRate,  
+        totalPrice: parseFloat(discountPrice) * parseInt(quantity), 
       });
     }
   }
 
-  // Cập nhật tổng tiền giỏ hàng
   cart.totalPrice = cart.books.reduce((total, bookItem) => {
     return total + bookItem.totalPrice;
   }, 0);
