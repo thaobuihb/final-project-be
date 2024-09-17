@@ -57,8 +57,15 @@ const orderSchema = new Schema({
         default: false,
         select: false,
       },
-},{ timestamps: true, }
+},{ timestamps: true, versionKey: false
+},
   );
+  orderSchema.methods.toJSON = function () {
+    const order = this._doc;
+    delete order.isDeleted;
+    delete order.userId;
+    return order;
+  };
 
   const Order = mongoose.model("Order", orderSchema);
 module.exports = Order;

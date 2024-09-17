@@ -30,6 +30,7 @@ const reviewSchema = new Schema(
     },
     {
       timestamps: true,
+      versionKey: false
     }
   );
 

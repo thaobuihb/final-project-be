@@ -4,8 +4,6 @@ const bcrypt = require("bcryptjs");
 const { StatusCodes } = require("http-status-codes");
 
 
-
-
 const authController = {};
 
 authController.loginWithEmail = catchAsync(async (req, res, next) => {

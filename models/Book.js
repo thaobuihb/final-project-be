@@ -46,8 +46,14 @@ const bookSchema = new Schema(
       select: false,
     },
   },
-  { timestamps: true }
+  { timestamps: true, versionKey: false },
 );
+
+bookSchema.methods.toJSON = function () {
+  const book = this._doc;
+  delete book.isDeleted;
+  return book;
+};
 
 const Book = mongoose.model("Book", bookSchema);
 module.exports = Book;
