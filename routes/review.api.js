@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const reviewController = require("../controllers/review.controller");
 const authentication = require("../middlewares/authentication");
+const validators = require("../middlewares/validators");
 
 /**
  * @route POST /reviews/:id
@@ -12,6 +13,7 @@ const authentication = require("../middlewares/authentication");
 router.post(
   "/:userId",
   authentication.loginRequired,
+  validators.validateObjectId("userId"),
   reviewController.createReview
 );
 
@@ -32,6 +34,7 @@ router.get("/", reviewController.getReview);
 router.put(
   "/:userId",
   authentication.loginRequired,
+  validators.validateObjectId("userId"),
   reviewController.updateReview
 );
 
@@ -44,6 +47,7 @@ router.put(
 router.delete(
   "/:userId/:reviewId",
   authentication.loginRequired,
+  validators.validateObjectId("userId", "reviewId"),
   reviewController.deleteReview
 );
 

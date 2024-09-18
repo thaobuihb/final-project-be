@@ -18,12 +18,24 @@ validators.validate = (validationArray) => async (req, res, next) => {
     return sendResponse(res, StatusCodes.UNPROCESSABLE_ENTITY, false, null, { message }, "Validation Error");
   };
 
-  validators.checkObjectId = (paramId) => {
-    if (!mongoose.Types.ObjectId.isValid(paramId)) {
-      throw new Error("Invalid ObjectId")
-    }
-    return true;
-  }
+  validators.validateObjectId = (...fields) => {
+    return (req, res, next) => {
+      for (const field of fields) {
+        const id = req.params[field];
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+          return sendResponse(
+            res,
+            StatusCodes.BAD_REQUEST,
+            false,
+            null,
+            { message: `Invalid ${field}` },
+            "Validation Error"
+          );
+        }
+      }
+      next();
+    };
+  };
 
   // Validator for creating a book
 validators.createBookValidator = [

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const cartController = require("../controllers/cart.controller");
 const authentication = require("../middlewares/authentication");
+const validators = require("../middlewares/validators");
 
 /**
  * @route POST /carts/:userId
@@ -12,6 +13,7 @@ const authentication = require("../middlewares/authentication");
 router.post(
   "/",
   authentication.loginRequired,
+  validators.validateObjectId("userId"),
   cartController.addOrUpdateBookInCart
 );
 
@@ -22,7 +24,12 @@ router.post(
  * @access User
  */
 
-router.get("/:userId", authentication.loginRequired, cartController.getCart);
+router.get(
+  "/:userId",
+  authentication.loginRequired,
+  validators.validateObjectId("userId"),
+  cartController.getCart
+);
 
 /**
  * @route DELETE /carts/:userId
@@ -33,6 +40,7 @@ router.get("/:userId", authentication.loginRequired, cartController.getCart);
 router.delete(
   "/:userId",
   authentication.loginRequired,
+  validators.validateObjectId("userId"),
   cartController.clearCart
 );
 

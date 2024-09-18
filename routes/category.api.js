@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const categoryController = require("../controllers/category.controller");
 const authentication = require("../middlewares/authentication");
+const validators = require("../middlewares/validators");
 
 /**
  * @route POST /category/
@@ -30,7 +31,11 @@ router.get("/", categoryController.getAllCategories);
  * @body none
  * @access Public
  */
-router.get("/:id", categoryController.getCategoryById);
+router.get(
+  "/:id",
+  validators.validateObjectId("id"),
+  categoryController.getCategoryById
+);
 
 /**
  * @route PUT /bookCategory/
@@ -42,6 +47,7 @@ router.put(
   "/:id",
   authentication.loginRequired,
   authentication.authorize(["admin"]),
+  validators.validateObjectId("id"),
   categoryController.updateCategory
 );
 
@@ -55,7 +61,8 @@ router.delete(
   "/:id",
   authentication.loginRequired,
   authentication.authorize(["admin"]),
-  categoryController.deleteCategory
+  validators.validateObjectId("id"),
+    categoryController.deleteCategory
 );
 
 module.exports = router;

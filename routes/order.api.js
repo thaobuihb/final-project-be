@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const orderController = require("../controllers/order.controller");
 const authentication = require("../middlewares/authentication");
+const validators = require("../middlewares/validators");
 
 /**
  * @route POST /orders/:id
@@ -12,6 +13,7 @@ const authentication = require("../middlewares/authentication");
 router.post(
   "/:userId",
   authentication.loginRequired,
+  validators.validateObjectId("userId"),
   orderController.createOrder
 );
 
@@ -24,6 +26,7 @@ router.post(
 router.get(
   "/:userId",
   authentication.loginRequired,
+  validators.validateObjectId("userId"),
   orderController.getOrdersByUserId
 );
 
@@ -36,6 +39,7 @@ router.get(
 router.get(
   "/:userId/:orderId",
   authentication.loginRequired,
+  validators.validateObjectId("userId", "orderId"),
   orderController.getOrderById
 );
 
@@ -48,6 +52,7 @@ router.get(
 router.put(
   "/:userId/:orderId",
   authentication.loginRequired,
+  validators.validateObjectId("userId", "orderId"),
   orderController.updateOrderByUser
 );
 
@@ -74,6 +79,7 @@ router.put(
   "/:orderId",
   authentication.loginRequired,
   authentication.authorize(["admin"]),
+  validators.validateObjectId("orderId"),
   orderController.updateOrderAD
 );
 
@@ -87,6 +93,7 @@ router.delete(
   "/:userId/:orderId",
   authentication.loginRequired,
   authentication.authorize(["admin"]),
+  validators.validateObjectId("userId", "orderId"),
   orderController.deleteOrder
 );
 

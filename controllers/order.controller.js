@@ -5,11 +5,9 @@ const User = require("../models/User");
 const Cart = require("../models/Cart");
 const orderController = {};
 const { StatusCodes } = require("http-status-codes");
-const validators = require("../middlewares/validators");
 
 orderController.createOrder = catchAsync(async (req, res, next) => {
   const { userId } = req.params;
-  validators.checkObjectId(userId);
 
   const { books, shippingAddress, paymentMethods } = req.body;
 
@@ -74,7 +72,6 @@ orderController.createOrder = catchAsync(async (req, res, next) => {
 
 orderController.getOrdersByUserId = catchAsync(async (req, res, next) => {
   const userId = req.params.userId;
-  validators.checkObjectId(userId);
 
   const orders = await Order.find({ userId, isDeleted: false });
 
@@ -89,8 +86,6 @@ orderController.getOrdersByUserId = catchAsync(async (req, res, next) => {
 
 orderController.getOrderById = catchAsync(async (req, res, next) => {
   const { userId, orderId } = req.params;
-  validators.checkObjectId(userId, orderId)
-
 
   const order = await Order.findOne({ userId, _id: orderId, isDeleted: false });
 
@@ -115,7 +110,6 @@ orderController.getOrderById = catchAsync(async (req, res, next) => {
 orderController.updateOrderByUser = catchAsync(async (req, res, next) => {
   const { userId, orderId } = req.params;
   const { status } = req.body;
-  validators.checkObjectId(userId, orderId);
 
   const order = await Order.findOne({ userId, _id: orderId, isDeleted: false });
 
@@ -176,7 +170,6 @@ orderController.getAllOrders = catchAsync(async (req, res, next) => {
 
 orderController.updateOrderAD = catchAsync(async (req, res, next) => {
   const { orderId } = req.params;
-  validators.checkObjectId(orderId);
   const { status } = req.body;
 
   const order = await Order.findOne({ _id: orderId, isDeleted: false });
@@ -208,7 +201,6 @@ orderController.updateOrderAD = catchAsync(async (req, res, next) => {
 
 orderController.deleteOrder = catchAsync(async (req, res, next) => {
   const { userId, orderId } = req.params;
-  validators.checkObjectId(userId, orderId);
 
   const order = await Order.findOne({ userId, _id: orderId, isDeleted: false });
 

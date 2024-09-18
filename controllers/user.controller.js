@@ -2,7 +2,6 @@ const { sendResponse, AppError, catchAsync } = require("../helpers/utils");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const { StatusCodes } = require("http-status-codes");
-const validators = require("../middlewares/validators");
 
 const userController = {};
 
@@ -57,7 +56,6 @@ userController.getCurrentUser = catchAsync(async (req, res, next) => {
 
 userController.getUserById = catchAsync(async (req, res, next) => {
   const userId = req.params.id;
-  validators.checkObjectId(userId);
 
   const user = await User.findOne({ _id: userId, isDeleted: false });
 

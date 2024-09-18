@@ -2,7 +2,6 @@ const Category = require("../models/Category");
 const Book = require("../models/Book");
 const { sendResponse, catchAsync, AppError } = require("../helpers/utils");
 const { StatusCodes } = require("http-status-codes");
-const validators = require("../middlewares/validators");
 
 
 const categoryController = {};
@@ -60,7 +59,6 @@ categoryController.getAllCategories = catchAsync(async (req, res, next) => {
 
 categoryController.getCategoryById = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  validators.checkObjectId(id)
   const { page = 1, limit = 10, search, minPrice, maxPrice } = req.query;
   
   const category = await Category.findById({ _id: id, isDeleted: false });
@@ -133,7 +131,6 @@ categoryController.getCategoryById = catchAsync(async (req, res, next) => {
 
 categoryController.updateCategory = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  validators.checkObjectId(id);
   const { categoryName, description, createdAt, updatedAt } = req.body;
 
   const category = await Category.findByIdAndUpdate(
@@ -162,7 +159,6 @@ categoryController.updateCategory = catchAsync(async (req, res, next) => {
 
 categoryController.deleteCategory = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  validators.checkObjectId(id);
   const category = await Category.findOne({ _id: id, isDeleted: false });
 
   if (!category) {

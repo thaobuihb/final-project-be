@@ -1,7 +1,6 @@
 const Review = require("../models/Review");
 const { sendResponse, catchAsync, AppError } = require("../helpers/utils");
 const { StatusCodes } = require("http-status-codes");
-const validators = require("../middlewares/validators");
 
 
 const reviewController = {};
@@ -10,8 +9,6 @@ const reviewController = {};
 reviewController.createReview = catchAsync(async (req, res, next) => {
   const { userId } = req.params;
   const { bookId, comment, name } = req.body;
-  validators.checkObjectId(userId, bookId);
-
 
   const review = new Review({
     bookId,
@@ -48,7 +45,6 @@ reviewController.getReview = catchAsync(async (req, res, next) => {
 reviewController.updateReview = catchAsync(async (req, res, next) => {
   const { reviewId, comment } = req.body;
   const { userId } = req.params;
-  validators.checkObjectId(reviewId, userId)
 
   const review = await Review.findOneAndUpdate(
     { _id: reviewId, userId, isDeleted: false },
@@ -66,7 +62,6 @@ reviewController.updateReview = catchAsync(async (req, res, next) => {
 // Delete a review
 reviewController.deleteReview = catchAsync(async (req, res, next) => {
   const { userId, reviewId } = req.params;
-  validators.checkObjectId(userId, reviewId);
 
   const review = await Review.findOneAndUpdate(
     { _id: reviewId, userId, isDeleted: false },

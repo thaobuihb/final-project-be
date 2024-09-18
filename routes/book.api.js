@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bookController = require("../controllers/book.controller");
 const authentication = require("../middlewares/authentication");
+const validators = require("../middlewares/validators")
 
 /**
  * @route POST /books/
@@ -13,6 +14,7 @@ router.post(
     '/',
     authentication.loginRequired,
     authentication.authorize(["admin"]),
+    validators.validate(validators.createBookValidator),
     bookController.createBook
   );
   
@@ -38,6 +40,7 @@ router.get(
 
 router.get(
     '/:id',
+    validators.validateObjectId("id"),
     bookController.getBookById
   );
 
@@ -54,6 +57,7 @@ router.put(
     '/:id',
     authentication.loginRequired,
     authentication.authorize(["admin"]),
+    validators.validateObjectId("id"),
     bookController.updateBook
   );
 
@@ -69,6 +73,7 @@ router.delete(
     '/:id',
     authentication.loginRequired,
     authentication.authorize(["admin"]),
+    validators.validateObjectId("id"),
     bookController.deleteBook
   );
 

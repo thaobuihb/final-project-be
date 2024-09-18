@@ -42,8 +42,8 @@ router.get("/me", authentication.loginRequired, userController.getCurrentUser);
 router.get(
   "/:id",
   authentication.loginRequired,
-  userController.getUserById
-);
+  validators.validateObjectId("id"),
+  userController.getUserById);
 
 /**
  * @route PUT /users/:id
@@ -54,6 +54,7 @@ router.get(
 router.put(
   "/:id",
   authentication.loginRequired,
+  validators.validateObjectId("id"),
   userController.updateUser
 );
 /**
@@ -66,6 +67,7 @@ router.delete(
   "/:id",
   authentication.loginRequired,
   authentication.authorize(["admin"]),
+  validators.validateObjectId("id"),
   userController.deleteUser
 );
 module.exports = router;

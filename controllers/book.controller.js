@@ -5,13 +5,11 @@ const { sendResponse, catchAsync, AppError } = require("../helpers/utils");
 const mongoose = require("mongoose");
 const { ObjectId } = require("mongoose").Types;
 const { StatusCodes } = require("http-status-codes");
-const validators = require("../middlewares/validators");
 
 const bookController = {};
 
 // Create book
 bookController.createBook = [
-  validators.validate(validators.createBookValidator),
   catchAsync(async (req, res, next) => {
     const {
       name,
@@ -21,12 +19,9 @@ bookController.createBook = [
       img,
       description,
       categoryId,
+      discountRate, 
     } = req.body;
 
-    // Validate categoryId
-    validators.checkObjectId(categoryId);
-
-    // Find the category by ID
     const category = await Category.findById(categoryId);
     if (!category) {
       throw new AppError(
@@ -36,16 +31,21 @@ bookController.createBook = [
       );
     }
 
-    // Create a new book with the category reference
+    let discountedPrice = price;
+    if (discountRate && discountRate > 0) {
+      discountedPrice = price - (price * discountRate) / 100;
+    }
+
     const book = await Book.create({
       name,
       author,
       price,
+      discountedPrice: discountedPrice, 
+      discountRate: discountRate || 0,   
       publicationDate,
       img,
       description,
-      discountRate: 0,
-      category: category._id, // Reference category by ID
+      category: category._id, 
     });
 
     sendResponse(
@@ -154,9 +154,6 @@ bookController.getAllBooks = catchAsync(async (req, res, next) => {
 // Get book by id
 bookController.getBookById = catchAsync(async (req, res, next) => {
   const { id: bookId } = req.params;
-
-  validators.checkObjectId(bookId);
-
   const [book] = await Book.aggregate([
     {
       $match: { _id: new mongoose.Types.ObjectId(bookId), isDeleted: false },
@@ -211,8 +208,6 @@ bookController.updateBook = catchAsync(async (req, res, next) => {
   const bookId = req.params.id;
   const updateData = req.body;
 
-  validators.checkObjectId(bookId);
-
   if (updateData.discountRate !== undefined) {
     const originalPrice = updateData.price;
     const discountRate = updateData.discountRate;
@@ -246,8 +241,6 @@ bookController.updateBook = catchAsync(async (req, res, next) => {
 // Delete a book
 bookController.deleteBook = catchAsync(async (req, res, next) => {
   const { id: bookId } = req.params;
-  validators.checkObjectId(bookId);
-
 
   const book = await Book.findByIdAndUpdate(
     bookId,

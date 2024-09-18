@@ -2,7 +2,6 @@ const Cart = require("../models/Cart");
 const Book = require("../models/Book");
 const { sendResponse, catchAsync, AppError } = require("../helpers/utils");
 const { StatusCodes } = require("http-status-codes");
-const validators = require("../middlewares/validators");
 
 const cartController = {};
 
@@ -10,7 +9,6 @@ const cartController = {};
 cartController.addOrUpdateBookInCart = catchAsync(async (req, res) => {
   const userId = req.userId;
   const { bookId, quantity } = req.body;
-  validators.checkObjectId(userId, bookId)
 
   if (!bookId) {
     return sendResponse(
@@ -127,7 +125,6 @@ cartController.addOrUpdateBookInCart = catchAsync(async (req, res) => {
 //Delete cart
 cartController.clearCart = catchAsync(async (req, res) => {
   const { userId } = req.params;
-  validators.checkObjectId(userId)
 
   let cart = await Cart.findOne({ userId });
 
@@ -160,8 +157,6 @@ cartController.clearCart = catchAsync(async (req, res) => {
 // Get the user's cart
 cartController.getCart = catchAsync(async (req, res) => {
   const { userId } = req.params;
-  validators.checkObjectId(userId)
-
   const cart = await Cart.findOne({ userId }).populate("books.bookId");
 
   if (!cart) {
