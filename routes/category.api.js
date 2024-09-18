@@ -30,7 +30,7 @@ router.get("/", categoryController.getAllCategories);
  * @body none
  * @access Public
  */
-router.get("/:id", categoryController.getAllCategories);
+router.get("/:id", categoryController.getCategoryById);
 
 /**
  * @route PUT /bookCategory/

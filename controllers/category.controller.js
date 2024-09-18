@@ -62,10 +62,8 @@ categoryController.getCategoryById = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   validators.checkObjectId(id)
   const { page = 1, limit = 10, search, minPrice, maxPrice } = req.query;
-  console.log("Category ID:", id);
-  console.log("Query Parameters:", { page, limit, search, minPrice, maxPrice });
-
-  const category = await Category.findOne({ _id: id, isDeleted: false });
+  
+  const category = await Category.findById({ _id: id, isDeleted: false });
   console.log("Category found:", category);
 
   if (!category) {
