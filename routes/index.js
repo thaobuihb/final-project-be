@@ -34,7 +34,8 @@ router.use("/orders", orderAPI)
 const reviewAPI = require("./review.api");
 router.use("/reviews", reviewAPI)
 
-
-
+//wishlistAPI
+const wishlistAPI = require("./wishlist.api")
+router.use("/wishlist", wishlistAPI)
 
 module.exports = router
