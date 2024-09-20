@@ -9,7 +9,7 @@ const bookSchema = new Schema(
     },
     author: {
       type: String,
-      required: true,
+      // required: true,
     },
     price: {
       type: Number,
@@ -35,7 +35,7 @@ const bookSchema = new Schema(
     discountRate: { type: Number, default: 0 },
     discountedPrice: { type: Number, default: null },
     category: {
-      type: Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
       required: true,
     },

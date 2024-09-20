@@ -48,6 +48,8 @@ bookController.createBook = [
       category: category._id, 
     });
 
+    console.log(book);
+
     sendResponse(
       res,
       StatusCodes.OK,
