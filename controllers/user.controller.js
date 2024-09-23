@@ -10,7 +10,11 @@ userController.register = catchAsync(async (req, res, next) => {
 
   let user = await User.findOne({ email });
   if (user)
-    throw new AppError(StatusCodes.BAD_REQUEST, "User already exists", "Registration Error");
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "User already exists",
+      "Registration Error"
+    );
 
   const salt = await bcrypt.genSalt(10);
   password = await bcrypt.hash(password, salt);
@@ -28,20 +32,29 @@ userController.register = catchAsync(async (req, res, next) => {
 });
 
 userController.getUsers = catchAsync(async (req, res, next) => {
-  const users = await User.find({ isDeleted: false, role: { $ne: 'admin' } });
+  const users = await User.find({ isDeleted: false, role: { $ne: "admin" } });
 
-  sendResponse(res, StatusCodes.OK, true, users, null, "Users retrieved successfully");
+  sendResponse(
+    res,
+    StatusCodes.OK,
+    true,
+    users,
+    null,
+    "Users retrieved successfully"
+  );
 });
 
 userController.getCurrentUser = catchAsync(async (req, res, next) => {
-  const currentUserId = req.userId;
+  const currentUserId = req.userId;  
 
   const user = await User.findById(currentUserId);
-  if (!user)
-    throw new AppError(StatusCodes.BAD_REQUEST, "User not found", "Get current user error");
-
-  if (user.role === 'admin') {
-    throw new AppError(StatusCodes.FORBIDDEN, "Access denied", "Unauthorized access");
+  
+  if (!user) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "User not found",
+      "Get current user error"
+    );
   }
 
   return sendResponse(
@@ -56,25 +69,46 @@ userController.getCurrentUser = catchAsync(async (req, res, next) => {
 
 userController.getUserById = catchAsync(async (req, res, next) => {
   const userId = req.params.id;
+  const currentUserId = req.userId;
+
+  const currentUser = await User.findById(currentUserId);
+
+  if (currentUser.role !== "admin" && currentUserId !== userId) {
+    throw new AppError(
+      StatusCodes.FORBIDDEN,
+      "Access denied",
+      "Unauthorized access"
+    );
+  }
 
   const user = await User.findOne({ _id: userId, isDeleted: false });
-
   if (!user) {
-    throw new AppError(StatusCodes.NOT_FOUND, "User not found", "Profile Error");
+    throw new AppError(
+      StatusCodes.NOT_FOUND,
+      "User not found",
+      "Profile Error"
+    );
   }
 
-  if (user.role === 'admin') {
-    throw new AppError(StatusCodes.FORBIDDEN, "Access denied", "Unauthorized access");
-  }
-
-  sendResponse(res, StatusCodes.OK, true, user, null, "Get User profile successfully");
+  sendResponse(
+    res,
+    StatusCodes.OK,
+    true,
+    user,
+    null,
+    "Get user profile successfully"
+  );
 });
 
 userController.updateUser = catchAsync(async (req, res, next) => {
   const currentUserId = req.userId;
   const userId = req.params.id;
   if (currentUserId !== userId)
-    throw new AppError(StatusCodes.BAD_REQUEST, "Permission required", "Profile Update error");
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "Permission required",
+      "Profile Update error"
+    );
 
   const {
     name,
@@ -92,7 +126,11 @@ userController.updateUser = catchAsync(async (req, res, next) => {
   let user = await User.findOne({ _id: userId, isDeleted: false });
 
   if (!user) {
-    throw new AppError(StatusCodes.NOT_FOUND, "User not found", "Profile Update Error");
+    throw new AppError(
+      StatusCodes.NOT_FOUND,
+      "User not found",
+      "Profile Update Error"
+    );
   }
 
   user.name = name || user.name;
@@ -112,7 +150,14 @@ userController.updateUser = catchAsync(async (req, res, next) => {
 
   user = await user.save();
 
-  sendResponse(res, StatusCodes.OK, true, user, null, "User profile updated successfully");
+  sendResponse(
+    res,
+    StatusCodes.OK,
+    true,
+    user,
+    null,
+    "User profile updated successfully"
+  );
 });
 
 userController.deleteUser = catchAsync(async (req, res, next) => {
@@ -121,13 +166,24 @@ userController.deleteUser = catchAsync(async (req, res, next) => {
   const user = await User.findOne({ _id: userId, isDeleted: false });
 
   if (!user) {
-    throw new AppError(StatusCodes.NOT_FOUND, "User not found", "Delete User Error");
+    throw new AppError(
+      StatusCodes.NOT_FOUND,
+      "User not found",
+      "Delete User Error"
+    );
   }
 
   user.isDeleted = true;
   await user.save();
 
-  sendResponse(res, StatusCodes.OK, true, null, null, "User deleted successfully");
+  sendResponse(
+    res,
+    StatusCodes.OK,
+    true,
+    null,
+    null,
+    "User deleted successfully"
+  );
 });
 
 module.exports = userController;

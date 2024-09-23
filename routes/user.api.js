@@ -37,11 +37,12 @@ router.get("/me", authentication.loginRequired, userController.getCurrentUser);
  * @route GET /users/:id
  * @description get a User by id
  * @body none
- * @access Public
+ * @access Login required (only admin can access)
  */
 router.get(
   "/:id",
   authentication.loginRequired,
+  authentication.authorize(['admin']),
   validators.validateObjectId("id"),
   userController.getUserById);
 
