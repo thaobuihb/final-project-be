@@ -117,7 +117,6 @@ userController.updateUser = catchAsync(async (req, res, next) => {
 
 userController.deleteUser = catchAsync(async (req, res, next) => {
   const userId = req.params.id;
-  validators.checkObjectId(userId);
 
   const user = await User.findOne({ _id: userId, isDeleted: false });
 

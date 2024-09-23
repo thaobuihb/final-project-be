@@ -6,6 +6,18 @@ const { StatusCodes } = require("http-status-codes");
 const cartController = {};
 
 // Add or update a book to the cart
+const calculateBookDetails = (book, quantity) => {
+  const originalPrice = book.price;
+  const discountPrice = book.discountedPrice || originalPrice;
+  const discountRate = book.discountRate
+    ? ((originalPrice - book.discountedPrice) / originalPrice) * 100 
+    : 0;
+
+  const totalPrice = parseFloat(discountPrice) * parseInt(quantity);
+
+  return { originalPrice, discountPrice, discountRate, totalPrice };
+};
+
 cartController.addOrUpdateBookInCart = catchAsync(async (req, res) => {
   const userId = req.userId;
   const { bookId, quantity } = req.body;
@@ -35,10 +47,9 @@ cartController.addOrUpdateBookInCart = catchAsync(async (req, res) => {
 
   const originalPrice = book.price;
   const discountPrice = book.discountedPrice || originalPrice;
-  
-  const discountRate = book.discountRate
-    ? ((originalPrice - book.discountedPrice) / originalPrice) * 100 
-    : 0;
+  const discountRate = book.discountRate || 0;
+
+  const totalPrice = parseFloat(discountPrice) * parseInt(quantity);
 
   const name = book.name;
 
@@ -51,12 +62,12 @@ cartController.addOrUpdateBookInCart = catchAsync(async (req, res) => {
         books: [
           {
             bookId,
-            name, 
+            name,
             quantity: parseInt(quantity),
             originalPrice,
-            discountPrice, 
-            discountRate, 
-            totalPrice: parseFloat(discountPrice) * parseInt(quantity), 
+            discountPrice,
+            discountRate,
+            totalPrice, 
           },
         ],
       });
@@ -81,28 +92,28 @@ cartController.addOrUpdateBookInCart = catchAsync(async (req, res) => {
           bookExists = true;
           return {
             ...bookItem,
-            name, 
+            name,
             quantity: parseInt(quantity),
-            discountPrice, 
-            discountRate, 
-            totalPrice: parseFloat(discountPrice) * parseInt(quantity), 
+            discountPrice,
+            discountRate,
+            totalPrice: parseFloat(discountPrice) * parseInt(quantity), // Tính toán lại totalPrice
           };
         }
       }
       return bookItem;
     });
 
-    cart.books = cart.books.filter((book) => book !== null);
+    cart.books = cart.books.filter((book) => book !== null); // Loại bỏ sách có quantity 0
 
     if (!bookExists && parseInt(quantity) > 0) {
       cart.books.push({
         bookId,
-        name, 
+        name,
         quantity: parseInt(quantity),
         originalPrice,
-        discountPrice, 
-        discountRate,  
-        totalPrice: parseFloat(discountPrice) * parseInt(quantity), 
+        discountPrice,
+        discountRate,
+        totalPrice: parseFloat(discountPrice) * parseInt(quantity), // Tính toán totalPrice mới
       });
     }
   }
@@ -121,6 +132,8 @@ cartController.addOrUpdateBookInCart = catchAsync(async (req, res) => {
     "Cart updated successfully"
   );
 });
+
+
 
 //Delete cart
 cartController.clearCart = catchAsync(async (req, res) => {
@@ -160,7 +173,7 @@ cartController.getCart = catchAsync(async (req, res) => {
   const cart = await Cart.findOne({ userId }).populate("books.bookId");
 
   if (!cart) {
-    throw new AppError("Cart not found", StatusCodes.NOT_FOUND);
+    throw new AppError(StatusCodes.NOT_FOUND, "Cart not found");
   }
 
   return sendResponse(

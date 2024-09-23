@@ -22,7 +22,6 @@ const cartSchema = new Schema(
 
 cartSchema.methods.toJSON = function () {
   const cart = this._doc;
-  delete cart.userId;
   delete cart.isDeleted;
   return cart;
 };

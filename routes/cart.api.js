@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const cartController = require("../controllers/cart.controller");
 const authentication = require("../middlewares/authentication");
-const validators = require("../middlewares/validators");
+// const validators = require("../middlewares/validators");
 
 /**
  * @route POST /carts/:userId
@@ -13,12 +13,12 @@ const validators = require("../middlewares/validators");
 router.post(
   "/",
   authentication.loginRequired,
-  validators.validateObjectId("userId"),
+  // validators.validateObjectId("userId"),
   cartController.addOrUpdateBookInCart
 );
 
 /**
- * @route GET /carts/:userId
+ * @route GET /carts/:userId  
  * @description Get all cart of a user
  * @body { bookId, quantity }
  * @access User
@@ -27,7 +27,7 @@ router.post(
 router.get(
   "/:userId",
   authentication.loginRequired,
-  validators.validateObjectId("userId"),
+  // validators.validateObjectId("userId"),
   cartController.getCart
 );
 
@@ -40,7 +40,7 @@ router.get(
 router.delete(
   "/:userId",
   authentication.loginRequired,
-  validators.validateObjectId("userId"),
+  // validators.validateObjectId("userId"),
   cartController.clearCart
 );
 
