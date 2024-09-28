@@ -268,4 +268,53 @@ bookController.deleteBook = catchAsync(async (req, res, next) => {
   );
 });
 
+
+// bookController.getDiscountedBooks = catchAsync(async (req, res, next) => {
+//   console.log("Discounted Books fffff:", discountedBooks); 
+
+//   const discountedBooks = await Book.find({
+//     discountRate: { $gt: 0 },
+//     isDeleted: false,
+//   });
+
+//   console.log("Discounted Books:", discountedBooks); 
+
+//   if (!discountedBooks || discountedBooks.length === 0) {
+//     throw new AppError(StatusCodes.NOT_FOUND, "No discounted books found");
+//   }
+
+//   sendResponse(
+//     res,
+//     StatusCodes.OK,
+//     true,
+//     discountedBooks,
+//     null,
+//     "Discounted books retrieved successfully"
+//   );
+// });
+
+bookController.getDiscountedBooks = catchAsync(async (req, res, next) => {
+  console.log("Request received for discounted books:", req.body);
+
+  const discountedBooks = await Book.find({
+    discountRate: { $gt: 0 },
+    isDeleted: false,
+  });
+
+  console.log("Discounted Books:", discountedBooks);
+
+  if (!discountedBooks || discountedBooks.length === 0) {
+    throw new AppError(StatusCodes.NOT_FOUND, "No discounted books found");
+  }
+
+  sendResponse(
+    res,
+    StatusCodes.OK,
+    true,
+    discountedBooks,
+    null,
+    "Discounted books retrieved successfully"
+  );
+});
+
 module.exports = bookController;

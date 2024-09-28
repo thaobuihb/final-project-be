@@ -31,6 +31,17 @@ router.get(
   );
 
 
+  /**
+ * @route GET /books/discounted
+ * @description Get all discounted books
+ * @body none
+ * @access Public
+ */
+router.get(
+  '/discounted',
+  bookController.getDiscountedBooks
+);
+
 /**
  * @route GET /books/:id
  * @description Get book by id
@@ -76,5 +87,6 @@ router.delete(
     validators.validateObjectId("id"),
     bookController.deleteBook
   );
+
 
 module.exports = router

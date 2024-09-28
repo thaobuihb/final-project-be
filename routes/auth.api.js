@@ -6,7 +6,7 @@ const validators = require("../middlewares/validators");
 
 
 /**
- * @route POST /auth/login
+ * @route POST /login
  * @description Log in with username and password
  * @body {email, passsword}
  * @access Public
