@@ -23,7 +23,7 @@ const categorySchema = new Schema(
 
 categorySchema.methods.toJSON = function () {
   const category = this._doc;
-  delete category.isDeleted;
+  // delete category.isDeleted;
   return category;
 };
 

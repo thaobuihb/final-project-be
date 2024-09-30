@@ -26,6 +26,14 @@ router.post(
 router.get("/", categoryController.getAllCategories);
 
 /**
+ * @route GET /category/popular
+ * @description Get popular category
+ * @body none
+ * @access Public
+ */
+router.get("/popular", categoryController.getPopularCategories);
+
+/**
  * @route GET /category/
  * @description Get category by ID
  * @body none

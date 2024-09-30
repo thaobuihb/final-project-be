@@ -3,65 +3,60 @@ const Review = require("../models/Review.js");
 const Category = require("../models/Category.js");
 const { sendResponse, catchAsync, AppError } = require("../helpers/utils");
 const mongoose = require("mongoose");
-const { ObjectId } = require("mongoose").Types;
 const { StatusCodes } = require("http-status-codes");
 
 const bookController = {};
 
 // Create book
-bookController.createBook = [
-  catchAsync(async (req, res, next) => {
-    const {
-      name,
-      author,
-      price,
-      publicationDate,
-      img,
-      description,
-      categoryId,
-      discountRate, 
-    } = req.body;
+bookController.createBook = catchAsync(async (req, res, next) => {
+  const {
+    name,
+    author,
+    price,
+    publicationDate,
+    img,
+    description,
+    categoryId,
+    discountRate,
+  } = req.body;
 
-    const category = await Category.findById(categoryId);
-    if (!category) {
-      throw new AppError(
-        StatusCodes.NOT_FOUND,
-        "Category not found",
-        "Create Book Error"
-      );
-    }
-
-    let discountedPrice = price;
-    if (discountRate && discountRate > 0) {
-      discountedPrice = price - (price * discountRate) / 100;
-    }
-
-    const book = await Book.create({
-      name,
-      author,
-      price,
-      discountedPrice: discountedPrice, 
-      discountRate: discountRate || 0,   
-      publicationDate,
-      img,
-      description,
-      category: category._id, 
-    });
-
-    console.log(book);
-
-    sendResponse(
-      res,
-      StatusCodes.OK,
-      true,
-      book,
-      null,
-      "Create new book successful"
+  const category = await Category.findById(categoryId);
+  if (!category) {
+    throw new AppError(
+      StatusCodes.NOT_FOUND,
+      "Category not found",
+      "Create Book Error"
     );
-  }),
-];
+  }
 
-//Get all books
+  let discountedPrice = price;
+  if (discountRate && discountRate > 0) {
+    discountedPrice = price - (price * discountRate) / 100;
+  }
+
+  const book = await Book.create({
+    name,
+    author,
+    price,
+    discountedPrice,
+    discountRate: discountRate || 0,
+    publicationDate,
+    img,
+    description,
+    category: category._id,
+  });
+
+  sendResponse(
+    res,
+    StatusCodes.CREATED,
+    true,
+    book,
+    null,
+    "Create new book successful"
+  );
+});
+
+// Get all books
 bookController.getAllBooks = catchAsync(async (req, res, next) => {
   const { page = 1, limit = 10, search, minPrice, maxPrice } = req.query;
 
@@ -69,9 +64,7 @@ bookController.getAllBooks = catchAsync(async (req, res, next) => {
   const limitNumber = parseInt(limit);
   const skip = (pageNumber - 1) * limitNumber;
 
-  const searchQuery = {
-    isDeleted: false,
-  };
+  const searchQuery = { isDeleted: false };
 
   if (search) {
     const yearPattern = /\b\d{4}\b/;
@@ -223,6 +216,7 @@ bookController.updateBook = catchAsync(async (req, res, next) => {
     { $set: { isDeleted: false, ...updateData } },
     { new: true }
   );
+
   if (!book) {
     throw new AppError(
       StatusCodes.NOT_FOUND,
@@ -230,6 +224,7 @@ bookController.updateBook = catchAsync(async (req, res, next) => {
       "Update Book Error"
     );
   }
+
   sendResponse(
     res,
     StatusCodes.OK,
@@ -268,40 +263,12 @@ bookController.deleteBook = catchAsync(async (req, res, next) => {
   );
 });
 
-
-// bookController.getDiscountedBooks = catchAsync(async (req, res, next) => {
-//   console.log("Discounted Books fffff:", discountedBooks); 
-
-//   const discountedBooks = await Book.find({
-//     discountRate: { $gt: 0 },
-//     isDeleted: false,
-//   });
-
-//   console.log("Discounted Books:", discountedBooks); 
-
-//   if (!discountedBooks || discountedBooks.length === 0) {
-//     throw new AppError(StatusCodes.NOT_FOUND, "No discounted books found");
-//   }
-
-//   sendResponse(
-//     res,
-//     StatusCodes.OK,
-//     true,
-//     discountedBooks,
-//     null,
-//     "Discounted books retrieved successfully"
-//   );
-// });
-
+// Get discounted books
 bookController.getDiscountedBooks = catchAsync(async (req, res, next) => {
-  console.log("Request received for discounted books:", req.body);
-
   const discountedBooks = await Book.find({
     discountRate: { $gt: 0 },
     isDeleted: false,
   });
-
-  console.log("Discounted Books:", discountedBooks);
 
   if (!discountedBooks || discountedBooks.length === 0) {
     throw new AppError(StatusCodes.NOT_FOUND, "No discounted books found");
@@ -317,4 +284,56 @@ bookController.getDiscountedBooks = catchAsync(async (req, res, next) => {
   );
 });
 
+// Get newly released books
+bookController.getNewlyReleasedBooks = catchAsync(async (req, res) => {
+  const books = await Book.find({ isDeleted: false }).sort({
+    publicationDate: -1,
+  });
+
+  if (books.length === 0) {
+    throw new AppError(StatusCodes.NOT_FOUND, "No newly released books found.");
+  }
+
+  sendResponse(
+    res,
+    StatusCodes.OK,
+    true,
+    books,
+    null,
+    "Newly released books retrieved successfully"
+  );
+});
+
+bookController.getBooksByCategoryId = catchAsync(async (req, res) => {
+  const { categoryId } = req.params;
+
+  // Kiểm tra categoryId có phải là ObjectId hợp lệ không
+  if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "Invalid categoryId.",
+      "Get Books by Category Error"
+    );
+  }
+
+  // Tìm sách theo categoryId
+  const books = await Book.find({ category: categoryId, isDeleted: false });
+
+  if (!books || books.length === 0) {
+    throw new AppError(
+      StatusCodes.NOT_FOUND,
+      "No books found in this category.",
+      "Get Books by Category Error"
+    );
+  }
+
+  sendResponse(
+    res,
+    StatusCodes.OK,
+    true,
+    books,
+    null,
+    "Books retrieved successfully"
+  );
+});
 module.exports = bookController;

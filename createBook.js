@@ -18,34 +18,37 @@ mongoose
     console.log("Data has been written to data.json");
 
     const categories = await Category.find({});
+    const categoryMap = categories.reduce((map, category) => {
+      map[category.categoryName.toLowerCase()] = category._id;
+      return map;
+    }, {});
+
+    // Xóa dữ liệu cũ
+    await Book.deleteMany({});
+    console.log("Old books have been deleted");
 
     const updatedBooks = jsonObj.map((book) => {
       const bookCategoryLower = book.category.toLowerCase();
 
-      const matchedCategory = categories.find(
-        (category) => category.categoryName.toLowerCase() === bookCategoryLower
-      );
+      const matchedCategory = categoryMap[bookCategoryLower];
 
       if (matchedCategory) {
-        book.category = matchedCategory._id;
+        book.category = matchedCategory;
       } else {
         console.log(
           `Category "${book.category}" not found for book "${book.title}"`
         );
       }
 
-      // Tính toán discountedPrice dựa trên discountRate và price
-      const price = parseFloat(book.price); // Chuyển đổi price thành số
-      const discountRate = parseFloat(book.discountRate) || 0; // Chuyển đổi discountRate thành số
+      const price = parseFloat(book.price); 
+      const discountRate = parseFloat(book.discountRate) || 0; 
 
-      // Nếu discountRate tồn tại và lớn hơn 0, tính discountedPrice
       if (discountRate > 0) {
         book.discountedPrice = price - (price * discountRate) / 100;
       } else {
-        book.discountedPrice = price; // Nếu không có giảm giá, discountedPrice là giá gốc
+        book.discountedPrice = price; 
       }
 
-      // console.log('Book to be inserted:', book);
       return book;
     });
 

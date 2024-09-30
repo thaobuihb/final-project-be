@@ -24,7 +24,7 @@ router.use("/carts", cartAPI)
 
 //categoryAPI
 const categoryAPI = require("./category.api");
-router.use("/categorys", categoryAPI)
+router.use("/categories", categoryAPI)
 
 //orderAPI
 const orderAPI = require("./order.api");

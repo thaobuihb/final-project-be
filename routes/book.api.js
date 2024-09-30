@@ -30,6 +30,16 @@ router.get(
     bookController.getAllBooks
   );
 
+/**
+ * @route GET /books/new-released
+ * @description Get newly released books
+ * @body none
+ * @access Public
+ */
+router.get(
+  '/new-released',
+  bookController.getNewlyReleasedBooks
+);
 
   /**
  * @route GET /books/discounted
@@ -55,7 +65,17 @@ router.get(
     bookController.getBookById
   );
 
+/**
+ * @route GET /books/:categoryId
+ * @description Get book by categoryId
+ * @body none
+ * @access Public
+ */
 
+router.get(
+  '/category/:categoryId',
+  bookController.getBooksByCategoryId
+);
 
 /**
  * @route PUT /books/:id
