@@ -29,11 +29,15 @@ mongoose
 
     const updatedBooks = jsonObj.map((book) => {
       const bookCategoryLower = book.category.toLowerCase();
-
       const matchedCategory = categoryMap[bookCategoryLower];
 
       if (matchedCategory) {
         book.category = matchedCategory;
+        
+        const categoryObj = categories.find(cat => cat._id.toString() === matchedCategory.toString());
+        if (categoryObj) {
+          book.categoryName = categoryObj.categoryName; 
+        }
       } else {
         console.log(
           `Category "${book.category}" not found for book "${book.title}"`

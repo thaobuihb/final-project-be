@@ -39,6 +39,10 @@ const bookSchema = new Schema(
       ref: "Category",
       required: true,
     },
+    categoryName: { 
+      type: String,
+      required: true,
+    },
 
     isDeleted: {
       type: Boolean,

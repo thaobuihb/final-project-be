@@ -336,4 +336,37 @@ bookController.getBooksByCategoryId = catchAsync(async (req, res) => {
     "Books retrieved successfully"
   );
 });
+
+bookController.getCategoryOfBooks = catchAsync(async (req, res) => {
+  const books = await Book.find();
+
+  const categories = {};
+
+  books.forEach((book) => {
+    const categoryId = book.category.toString(); 
+    const categoryName = book.categoryName; 
+
+    if (!categories[categoryId]) {
+      categories[categoryId] = {
+        name: categoryName, 
+        count: 0,
+        sampleBookImage: book.img || null, 
+      };
+    }
+    categories[categoryId].count += 1;
+  });
+
+  
+  const categoriesArray = Object.values(categories);
+
+  
+  res.status(200).json({
+    status: 'success',
+    data: {
+      categories: categoriesArray,
+    },
+  });
+});
+
+
 module.exports = bookController;

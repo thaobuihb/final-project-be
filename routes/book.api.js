@@ -52,6 +52,9 @@ router.get(
   bookController.getDiscountedBooks
 );
 
+
+router.get('/categories', bookController.getCategoryOfBooks);
+
 /**
  * @route GET /books/:id
  * @description Get book by id
@@ -83,6 +86,8 @@ router.get(
  * @body { name, author, price, publicationDate }
  * @access admin
  */
+
+
 
 router.put(
     '/:id',
