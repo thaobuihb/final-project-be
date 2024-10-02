@@ -58,7 +58,7 @@ bookController.createBook = catchAsync(async (req, res, next) => {
 
 // Get all books
 bookController.getAllBooks = catchAsync(async (req, res, next) => {
-  const { page = 1, limit = 30, search, minPrice, maxPrice } = req.query;
+  const { page = 1, limit = 30, search, minPrice, maxPrice, category } = req.query;
 
   const pageNumber = parseInt(page);
   const limitNumber = parseInt(limit);
@@ -66,6 +66,7 @@ bookController.getAllBooks = catchAsync(async (req, res, next) => {
 
   const searchQuery = { isDeleted: false };
 
+  // Tìm kiếm sách theo từ khóa
   if (search) {
     const yearPattern = /\b\d{4}\b/;
     const yearMatch = search.match(yearPattern);
@@ -83,26 +84,37 @@ bookController.getAllBooks = catchAsync(async (req, res, next) => {
     }
   }
 
+  // Lọc theo giá
   if (minPrice && maxPrice) {
     const minPriceValue = parseFloat(minPrice);
     const maxPriceValue = parseFloat(maxPrice);
     searchQuery.price = { $gte: minPriceValue, $lte: maxPriceValue };
   }
 
+  // Lọc theo danh mục (category)
+  if (category) {
+    if (mongoose.Types.ObjectId.isValid(category)) {
+      searchQuery["category"] = new mongoose.Types.ObjectId(category);  // Sử dụng new để khởi tạo ObjectId
+    } else {
+      return sendResponse(res, StatusCodes.BAD_REQUEST, false, null, "Invalid category ID", "Invalid category ID format.");
+    }
+  }
+
+  // Truy vấn sách từ MongoDB
   const result = await Book.aggregate([
     {
       $match: searchQuery,
     },
     {
       $lookup: {
-        from: "categories",
+        from: "categories",  // Liên kết với bảng categories để lấy tên danh mục
         localField: "category",
         foreignField: "_id",
         as: "category",
       },
     },
     {
-      $unwind: "$category",
+      $unwind: "$category",  // Giải nén mảng category để truy cập dễ dàng
     },
     {
       $project: {
@@ -114,7 +126,7 @@ bookController.getAllBooks = catchAsync(async (req, res, next) => {
         description: 1,
         discountRate: 1,
         discountedPrice: 1,
-        categoryName: "$category.categoryName",
+        categoryName: "$category.categoryName",  // Lấy tên danh mục từ bảng categories
       },
     },
     {
