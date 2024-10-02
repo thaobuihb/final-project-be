@@ -58,7 +58,7 @@ bookController.createBook = catchAsync(async (req, res, next) => {
 
 // Get all books
 bookController.getAllBooks = catchAsync(async (req, res, next) => {
-  const { page = 1, limit = 10, search, minPrice, maxPrice } = req.query;
+  const { page = 1, limit = 30, search, minPrice, maxPrice } = req.query;
 
   const pageNumber = parseInt(page);
   const limitNumber = parseInt(limit);
@@ -348,6 +348,7 @@ bookController.getCategoryOfBooks = catchAsync(async (req, res) => {
 
     if (!categories[categoryId]) {
       categories[categoryId] = {
+        id:categoryId,
         name: categoryName, 
         count: 0,
         sampleBookImage: book.img || null, 
