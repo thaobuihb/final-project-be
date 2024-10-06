@@ -91,12 +91,13 @@ bookController.getAllBooks = catchAsync(async (req, res, next) => {
     searchQuery.price = { $gte: minPriceValue, $lte: maxPriceValue };
   }
 
-  // Lọc theo danh mục (category)
+  // Lọc theo danh mục (category) hoặc theo tên danh mục (categoryName)
   if (category) {
     if (mongoose.Types.ObjectId.isValid(category)) {
-      searchQuery["category"] = new mongoose.Types.ObjectId(category);  // Sử dụng new để khởi tạo ObjectId
+      searchQuery["category"] = new mongoose.Types.ObjectId(category);  
     } else {
-      return sendResponse(res, StatusCodes.BAD_REQUEST, false, null, "Invalid category ID", "Invalid category ID format.");
+      // Tìm kiếm theo tên danh mục không phân biệt chữ hoa chữ thường
+      searchQuery["categoryName"] = { $regex: new RegExp(category, "i") };
     }
   }
 
@@ -114,7 +115,7 @@ bookController.getAllBooks = catchAsync(async (req, res, next) => {
       },
     },
     {
-      $unwind: "$category",  // Giải nén mảng category để truy cập dễ dàng
+      $unwind: "$category",  
     },
     {
       $project: {
@@ -185,6 +186,7 @@ bookController.getBookById = catchAsync(async (req, res, next) => {
         description: 1,
         img: 1,
         categoryName: "$category.categoryName",
+        category:"$category.category"
       },
     },
   ]);
@@ -319,7 +321,6 @@ bookController.getNewlyReleasedBooks = catchAsync(async (req, res) => {
 bookController.getBooksByCategoryId = catchAsync(async (req, res) => {
   const { categoryId } = req.params;
 
-  // Kiểm tra categoryId có phải là ObjectId hợp lệ không
   if (!mongoose.Types.ObjectId.isValid(categoryId)) {
     throw new AppError(
       StatusCodes.BAD_REQUEST,
@@ -328,7 +329,6 @@ bookController.getBooksByCategoryId = catchAsync(async (req, res) => {
     );
   }
 
-  // Tìm sách theo categoryId
   const books = await Book.find({ category: categoryId, isDeleted: false });
 
   if (!books || books.length === 0) {
@@ -380,6 +380,46 @@ bookController.getCategoryOfBooks = catchAsync(async (req, res) => {
     },
   });
 });
+
+bookController.getBooksByIds = async (req, res, next) => {
+  try {
+    let { bookIds } = req.body;
+
+    if (!bookIds || !Array.isArray(bookIds)) {
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        "Invalid input: bookIds must be an array",
+        "Get Books by IDs Error"
+      );
+    }
+
+    bookIds = bookIds.filter((id) => id); 
+
+    if (bookIds.length === 0) {
+      return sendResponse(
+        res,
+        StatusCodes.OK,
+        true,
+        [],
+        null,
+        "No valid book IDs provided"
+      );
+    }
+
+    const books = await Book.find({ _id: { $in: bookIds }, isDeleted: false });
+
+    return sendResponse(
+      res,
+      StatusCodes.OK,
+      true,
+      books,
+      null,
+      "Books retrieved successfully"
+    );
+  } catch (error) {
+    next(error);
+  }
+};
 
 
 module.exports = bookController;

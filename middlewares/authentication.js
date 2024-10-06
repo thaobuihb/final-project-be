@@ -71,4 +71,14 @@ authentication.authorize = (roles) => {
   };
 };
 
+authentication.guestIdMiddleware = (req, res, next) => {
+  if (!req.userId) {
+    const guestId = req.headers['x-forwarded-for'] || req.ip;
+    req.guestId = guestId;
+  }
+  next();
+};
+
+
+
 module.exports = authentication;

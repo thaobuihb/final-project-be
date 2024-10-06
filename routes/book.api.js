@@ -114,4 +114,12 @@ router.delete(
   );
 
 
+  /**
+ * @route POST /books/wishlist
+ * @description Get books by a list of IDs
+ * @body { bookIds: [Array of book IDs] }
+ * @access Public
+ */
+router.post('/wishlist', bookController.getBooksByIds);
+
 module.exports = router
