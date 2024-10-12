@@ -7,7 +7,7 @@ const wishlistController = {};
 
 // 1. Add a book to the wishlist (for guest or logged-in users)
 wishlistController.addToWishlist = catchAsync(async (req, res, next) => {
-  const { guestId } = req;  // Guest ID được lấy từ middleware
+  const { guestId } = req;  
   const { bookId } = req.body;
 
   const book = await Book.findById(bookId);
@@ -133,29 +133,42 @@ wishlistController.getWishlist = catchAsync(async (req, res, next) => {
 
 // 4. Sync wishlist after user logs in (sync between localStorage and server)
 wishlistController.syncWishlist = catchAsync(async (req, res, next) => {
+  // localWishList is list of book ids stored in localStorage
   const { userId, localWishlist } = req.body;
 
   let wishlist = await Wishlist.findOne({ userId });
 
   if (!wishlist) {
-    // Tạo một wishlist mới nếu chưa có
     wishlist = new Wishlist({ userId, books: [] });
   }
 
-  // Lọc các sách từ localWishlist và thêm vào wishlist trên server nếu chưa có
-  const booksToAdd = localWishlist.filter(
-    (localBook) => !wishlist.books.some((item) => item.bookId.toString() === localBook.bookId)
+  // Filter book ids that not existed in wished list
+  const newBookIdsToWishedList = localWishlist.filter(
+    (localBookIds) => !wishlist.books.some((item) => item.bookId.toString() === localBookIds)
   );
-  
-  // Thêm sách vào wishlist
-  booksToAdd.forEach(book => {
-    wishlist.books.push({
-      bookId: book.bookId,
-      name: book.name,
-      price: book.price,
-      discountedPrice: book.discountedPrice,
-      img: book.img,
+
+  // Find books with given ids from the above filter
+  await Book.find({ _id: { $in: newBookIdsToWishedList } })
+  .then(newWishedBooks => {
+    // Map through the result to transform the _id to bookId and make it a string
+    const transformedBooks = newWishedBooks.map(book => ({
+      ...book.toObject(),  // Convert Mongoose document to a plain JavaScript object
+      bookId: book._id.toString(),  // Replace _id with bookId as a string
+      _id: undefined  // Optionally remove the original _id field
+    }));
+
+    transformedBooks.forEach(book => {
+      wishlist.books.push({
+        bookId: book.bookId,
+        name: book.name,
+        price: book.price,
+        discountedPrice: book.discountedPrice,
+        img: book.img,
+      });
     });
+  })
+  .catch(err => {
+    console.error(err);
   });
 
   await wishlist.save();
