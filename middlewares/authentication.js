@@ -1,32 +1,41 @@
 const jwt = require("jsonwebtoken");
-const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
+const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY || process.env.JWT_SECRET; // Dùng một biến môi trường
 const { AppError, sendResponse } = require("../helpers/utils");
-const User = require("../models/User");
 const { StatusCodes } = require("http-status-codes");
 
 const authentication = {};
 
+// Middleware yêu cầu đăng nhập
 authentication.loginRequired = (req, res, next) => {
   try {
     const tokenString = req.headers.authorization;
-    if (!tokenString)
-      throw new AppError(StatusCodes.UNAUTHORIZED, "Login Required", "Authentication Error");
+    if (!tokenString) {
+      throw new AppError(
+        StatusCodes.UNAUTHORIZED,
+        "Login Required",
+        "Authentication Error"
+      );
+    }
 
     const token = tokenString.replace("Bearer ", "");
-    jwt.verify(token, JWT_SECRET_KEY, async (err, payload) => {
+    jwt.verify(token, JWT_SECRET_KEY, (err, payload) => {
       if (err) {
         if (err.name === "TokenExpiredError") {
-          throw new AppError(StatusCodes.UNAUTHORIZED, "Token expired", "Authentication Error");
+          throw new AppError(
+            StatusCodes.UNAUTHORIZED,
+            "Token expired",
+            "Authentication Error"
+          );
         } else {
-          throw new AppError(StatusCodes.UNAUTHORIZED, "Token is invalid", "Authentication Error");
+          throw new AppError(
+            StatusCodes.UNAUTHORIZED,
+            "Token is invalid",
+            "Authentication Error"
+          );
         }
       }
-      // Fetch the user from the database based on payload._id
-      //   const user = await User.findById(payload._id);
-      //   if (!user) {
-      //     throw new AppError(401, "User not found", "Authentication Error");
-      //   }
 
+      // Gán thông tin người dùng vào request
       req.role = payload.role;
       req.userId = payload._id;
       next();
@@ -36,15 +45,11 @@ authentication.loginRequired = (req, res, next) => {
   }
 };
 
+// Middleware kiểm tra vai trò người dùng
 authentication.authorize = (roles) => {
-  console.log("given roles: ", roles);
-  return async (req, res, next) => {
+  return (req, res, next) => {
     try {
-      // Kiểm tra vai trò người dùng
       const userRole = req.role;
-
-      console.log(`User Role: ${userRole}`);
-      console.log(`Allowed Roles: ${roles}`);
 
       if (!roles.includes(userRole)) {
         return sendResponse(
@@ -57,7 +62,7 @@ authentication.authorize = (roles) => {
         );
       }
 
-      next(); // Cho phép tiếp tục nếu người dùng có quyền hợp lệ
+      next(); // Tiếp tục nếu người dùng có quyền hợp lệ
     } catch (error) {
       return sendResponse(
         res,
@@ -71,14 +76,21 @@ authentication.authorize = (roles) => {
   };
 };
 
+// Middleware dành cho khách (guest)
 authentication.guestIdMiddleware = (req, res, next) => {
-  if (!req.userId) {
-    const guestId = req.headers['x-forwarded-for'] || req.ip;
-    req.guestId = guestId;
+  const token = req.headers.authorization?.split(' ')[1]; // Lấy token từ header Authorization
+
+  if (!token) {
+    return res.status(401).json({ message: "Token không được cung cấp" });
   }
-  next();
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET_KEY); // Xác minh token với secret
+    req.user = decoded; // Gán thông tin người dùng vào request
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: "Token không hợp lệ", error });
+  }
 };
-
-
 
 module.exports = authentication;

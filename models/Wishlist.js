@@ -2,9 +2,6 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const wishlistSchema = new Schema({
-  guestId: {
-    type: String,
-  },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

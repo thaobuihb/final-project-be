@@ -7,68 +7,52 @@ const wishlistController = {};
 
 // 1. Add a book to the wishlist (for guest or logged-in users)
 wishlistController.addToWishlist = catchAsync(async (req, res, next) => {
-  const { guestId } = req;  
-  const { bookId } = req.body;
+  const { userId, bookId } = req.body;
 
-  const book = await Book.findById(bookId);
-  if (!book) {
-    return sendResponse(
-      res,
-      StatusCodes.NOT_FOUND,
-      false,
-      null,
-      "Book not found",
-      "Add to Wishlist Failed"
-    );
-  }
-
-  let wishlist = await Wishlist.findOne({ guestId });
+  let wishlist = await Wishlist.findOne({ userId });
 
   if (!wishlist) {
-    wishlist = new Wishlist({ guestId, books: [] });
+    wishlist = new Wishlist({ userId, books: [] });
   }
 
-  const bookExists = wishlist.books.some(
-    (item) => item.bookId.toString() === bookId
-  );
+  const bookExists = wishlist.books.some((item) => item.bookId.toString() === bookId);
 
   if (bookExists) {
-    return sendResponse(
-      res,
-      StatusCodes.BAD_REQUEST,
-      false,
-      null,
-      "Book already in wishlist",
-      "Add to Wishlist Failed"
-    );
+    return sendResponse(res, StatusCodes.OK, false, null, "Sách đã có trong danh sách yêu thích");
+  }
+
+  const book = await Book.findById(bookId);
+
+  if (!book) {
+    return sendResponse(res, StatusCodes.NOT_FOUND, false, null, "Không tìm thấy cuốn sách này");
   }
 
   wishlist.books.push({
-    bookId,
+    bookId: book._id.toString(),
     name: book.name,
     price: book.price,
-    discountedPrice: book.discounted_price,
+    discountedPrice: book.discountedPrice,
     img: book.img,
   });
 
   await wishlist.save();
 
-  return sendResponse(
-    res,
-    StatusCodes.OK,
-    true,
-    wishlist,
-    null,
-    "Book added to wishlist successfully"
-  );
+  return sendResponse(res, StatusCodes.OK, true, wishlist.books, null, "Đã thêm sách vào wishlist");
 });
 
 // 2. Remove a book from the wishlist (for guest or logged-in users)
 wishlistController.removeFromWishlist = catchAsync(async (req, res, next) => {
+  const { userId } = req.body;
   const { guestId } = req;
   const { bookId } = req.body;
 
-  const wishlist = await Wishlist.findOne({ guestId });
+  console.log("Received userId:", userId);
+  console.log("Received bookId:", bookId);
+
+
+  const filter = userId ? { userId } : { guestId };
+
+  const wishlist = await Wishlist.findOne( filter );
 
   if (!wishlist) {
     return sendResponse(
@@ -98,9 +82,12 @@ wishlistController.removeFromWishlist = catchAsync(async (req, res, next) => {
 
 // 3. Get the wishlist for a guest (using guestId) or logged-in user
 wishlistController.getWishlist = catchAsync(async (req, res, next) => {
+  const userId = req.user ? req.user._id : null;
   const { guestId } = req;
-
-  const wishlist = await Wishlist.findOne({ guestId }).populate("books.bookId");
+  
+  
+  const filter = userId ? { userId } : { guestId };
+  const wishlist = await Wishlist.findOne(filter).populate("books.bookId");
 
   if (!wishlist) {
     return sendResponse(
@@ -177,7 +164,8 @@ wishlistController.syncWishlist = catchAsync(async (req, res, next) => {
     res,
     StatusCodes.OK,
     true,
-    wishlist.books,
+    {books: wishlist.books,
+      userId: wishlist.userId},
     null,
     "Wishlist synced successfully"
   );
