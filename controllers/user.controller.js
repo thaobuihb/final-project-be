@@ -27,7 +27,7 @@ userController.register = catchAsync(async (req, res, next) => {
     true,
     { user, accessToken },
     null,
-    "Create user successful"
+    "User created successfully"
   );
 });
 
@@ -45,13 +45,13 @@ userController.getUsers = catchAsync(async (req, res, next) => {
 });
 
 userController.getCurrentUser = catchAsync(async (req, res, next) => {
-  const currentUserId = req.userId;  
+  const currentUserId = req.userId;
 
   const user = await User.findById(currentUserId);
-  
+
   if (!user) {
     throw new AppError(
-      StatusCodes.BAD_REQUEST,
+      StatusCodes.NOT_FOUND,
       "User not found",
       "Get current user error"
     );
@@ -63,7 +63,7 @@ userController.getCurrentUser = catchAsync(async (req, res, next) => {
     true,
     user,
     null,
-    "Get current user successful"
+    "Current user retrieved successfully"
   );
 });
 
@@ -96,19 +96,31 @@ userController.getUserById = catchAsync(async (req, res, next) => {
     true,
     user,
     null,
-    "Get user profile successfully"
+    "User profile retrieved successfully"
   );
 });
 
 userController.updateUser = catchAsync(async (req, res, next) => {
   const currentUserId = req.userId;
   const userId = req.params.id;
-  if (currentUserId !== userId)
+  
+  if (currentUserId !== userId) {
     throw new AppError(
       StatusCodes.BAD_REQUEST,
       "Permission required",
       "Profile Update error"
     );
+  }
+
+  let user = await User.findOne({ _id: userId, isDeleted: false });
+
+  if (!user) {
+    throw new AppError(
+      StatusCodes.NOT_FOUND,
+      "User not found",
+      "Profile Update Error"
+    );
+  }
 
   const {
     name,
@@ -123,16 +135,7 @@ userController.updateUser = catchAsync(async (req, res, next) => {
     role,
   } = req.body;
 
-  let user = await User.findOne({ _id: userId, isDeleted: false });
-
-  if (!user) {
-    throw new AppError(
-      StatusCodes.NOT_FOUND,
-      "User not found",
-      "Profile Update Error"
-    );
-  }
-
+  // Cập nhật thông tin người dùng
   user.name = name || user.name;
   user.email = email || user.email;
   user.gender = gender || user.gender;

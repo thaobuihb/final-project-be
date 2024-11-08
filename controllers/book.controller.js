@@ -31,7 +31,7 @@ bookController.createBook = catchAsync(async (req, res, next) => {
 
   let discountedPrice = price;
   if (discountRate && discountRate > 0) {
-    discountedPrice = price - (price * discountRate) / 100;
+    discountedPrice = (price - (price * discountRate) / 100).toFixed(2);
   }
 
   const book = await Book.create({
@@ -58,7 +58,14 @@ bookController.createBook = catchAsync(async (req, res, next) => {
 
 // Get all books
 bookController.getAllBooks = catchAsync(async (req, res, next) => {
-  const { page = 1, limit = 30, search, minPrice, maxPrice, category } = req.query;
+  const {
+    page = 1,
+    limit = 30,
+    search,
+    minPrice,
+    maxPrice,
+    category,
+  } = req.query;
 
   const pageNumber = parseInt(page);
   const limitNumber = parseInt(limit);
@@ -94,7 +101,7 @@ bookController.getAllBooks = catchAsync(async (req, res, next) => {
   // Lọc theo danh mục (category) hoặc theo tên danh mục (categoryName)
   if (category) {
     if (mongoose.Types.ObjectId.isValid(category)) {
-      searchQuery["category"] = new mongoose.Types.ObjectId(category);  
+      searchQuery["category"] = new mongoose.Types.ObjectId(category);
     } else {
       // Tìm kiếm theo tên danh mục không phân biệt chữ hoa chữ thường
       searchQuery["categoryName"] = { $regex: new RegExp(category, "i") };
@@ -108,14 +115,14 @@ bookController.getAllBooks = catchAsync(async (req, res, next) => {
     },
     {
       $lookup: {
-        from: "categories",  // Liên kết với bảng categories để lấy tên danh mục
+        from: "categories", // Liên kết với bảng categories để lấy tên danh mục
         localField: "category",
         foreignField: "_id",
         as: "category",
       },
     },
     {
-      $unwind: "$category",  
+      $unwind: "$category",
     },
     {
       $project: {
@@ -127,7 +134,7 @@ bookController.getAllBooks = catchAsync(async (req, res, next) => {
         description: 1,
         discountRate: 1,
         discountedPrice: 1,
-        categoryName: "$category.categoryName",  // Lấy tên danh mục từ bảng categories
+        categoryName: "$category.categoryName", // Lấy tên danh mục từ bảng categories
       },
     },
     {
@@ -182,11 +189,13 @@ bookController.getBookById = catchAsync(async (req, res, next) => {
         name: 1,
         author: 1,
         price: 1,
+        discountRate: 1,
+        discountedPrice: 1,
         publicationDate: 1,
         description: 1,
         img: 1,
         categoryName: "$category.categoryName",
-        category:"$category.category"
+        category: "$category.category",
       },
     },
   ]);
@@ -220,8 +229,10 @@ bookController.updateBook = catchAsync(async (req, res, next) => {
   if (updateData.discountRate !== undefined) {
     const originalPrice = updateData.price;
     const discountRate = updateData.discountRate;
-    const discountedPrice =
-      originalPrice - (originalPrice * discountRate) / 100;
+    const discountedPrice = (
+      originalPrice -
+      (originalPrice * discountRate) / 100
+    ).toFixed(2);
     updateData.discountedPrice = discountedPrice;
   }
 
@@ -355,26 +366,24 @@ bookController.getCategoryOfBooks = catchAsync(async (req, res) => {
   const categories = {};
 
   books.forEach((book) => {
-    const categoryId = book.category.toString(); 
-    const categoryName = book.categoryName; 
+    const categoryId = book.category.toString();
+    const categoryName = book.categoryName;
 
     if (!categories[categoryId]) {
       categories[categoryId] = {
-        id:categoryId,
-        name: categoryName, 
+        id: categoryId,
+        name: categoryName,
         count: 0,
-        sampleBookImage: book.img || null, 
+        sampleBookImage: book.img || null,
       };
     }
     categories[categoryId].count += 1;
   });
 
-  
   const categoriesArray = Object.values(categories);
 
-  
   res.status(200).json({
-    status: 'success',
+    status: "success",
     data: {
       categories: categoriesArray,
     },
@@ -393,7 +402,7 @@ bookController.getBooksByIds = async (req, res, next) => {
       );
     }
 
-    bookIds = bookIds.filter((id) => id); 
+    bookIds = bookIds.filter((id) => id);
 
     if (bookIds.length === 0) {
       return sendResponse(
@@ -421,5 +430,23 @@ bookController.getBooksByIds = async (req, res, next) => {
   }
 };
 
+bookController.getBooksByCartIds = catchAsync(async (req, res, next) => {
+  const { bookIds } = req.body;
+
+  if (!bookIds || !Array.isArray(bookIds)) {
+    throw new AppError(400, "Invalid book IDs", "Get Books by Cart IDs Error");
+  }
+
+  const books = await Book.find({ _id: { $in: bookIds } });
+
+  return sendResponse(
+    res,
+    200,
+    true,
+    books,
+    null,
+    "Books fetched successfully"
+  );
+});
 
 module.exports = bookController;

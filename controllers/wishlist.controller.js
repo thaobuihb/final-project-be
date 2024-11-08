@@ -208,4 +208,35 @@ wishlistController.getWishlistByUserId = catchAsync(async (req, res, next) => {
   );
 });
 
+
+wishlistController.clearWishlist = catchAsync(async (req, res) => {
+  const userId = req.userId;
+
+  // Tìm wishlist của người dùng
+  const wishlist = await Wishlist.findOne({ userId });
+  if (!wishlist) {
+    return sendResponse(
+      res,
+      StatusCodes.NOT_FOUND,
+      false,
+      null,
+      "Wishlist not found",
+      "Clear wishlist failed"
+    );
+  }
+
+  // Xóa tất cả sách trong wishlist của người dùng
+  wishlist.books = [];
+  await wishlist.save();
+
+  return sendResponse(
+    res,
+    StatusCodes.OK,
+    true,
+    null,
+    null,
+    "Wishlist cleared successfully"
+  );
+});
+
 module.exports = wishlistController;

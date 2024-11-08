@@ -5,22 +5,33 @@ const { StatusCodes } = require("http-status-codes");
 
 const cartController = {};
 
-// Add or update a book to the cart
+// Helper function to calculate book details
 const calculateBookDetails = (book, quantity) => {
   const originalPrice = book.price;
   const discountPrice = book.discountedPrice || originalPrice;
   const discountRate = book.discountRate
-    ? ((originalPrice - book.discountedPrice) / originalPrice) * 100 
+    ? ((originalPrice - book.discountedPrice) / originalPrice) * 100
     : 0;
 
   const totalPrice = parseFloat(discountPrice) * parseInt(quantity);
-
   return { originalPrice, discountPrice, discountRate, totalPrice };
 };
 
+// Add or update a book in the cart
 cartController.addOrUpdateBookInCart = catchAsync(async (req, res) => {
-  const userId = req.userId;
-  const { bookId, quantity } = req.body;
+  const userId = req.body.userId || req.userId;
+  const { bookId, quantity, price } = req.body;
+
+  if (!userId) {
+    return sendResponse(
+      res,
+      StatusCodes.BAD_REQUEST,
+      false,
+      null,
+      "User ID is required",
+      "Cart update failed"
+    );
+  }
 
   if (!bookId) {
     return sendResponse(
@@ -33,94 +44,80 @@ cartController.addOrUpdateBookInCart = catchAsync(async (req, res) => {
     );
   }
 
-  const book = await Book.findById(bookId);
-  if (!book) {
+  if (!price) {
+    return sendResponse(
+      res,
+      StatusCodes.BAD_REQUEST,
+      false,
+      null,
+      "Price is required",
+      "Cart update failed"
+    );
+  }
+
+  let userCart = await Cart.findOne({ userId });
+
+  if (!userCart) {
+    // Nếu giỏ hàng chưa tồn tại, tạo giỏ hàng mới
+    userCart = new Cart({
+      userId,
+      books: [{ bookId, quantity, price }],
+    });
+  } else {
+
+    console.log("Updating existing cart for user:", userId);
+
+    // Nếu giỏ hàng đã tồn tại, kiểm tra và thêm hoặc cập nhật sách
+    const existingItem = userCart.books.find(item => item.bookId?.toString() === bookId.toString());
+    console.log("Existing item in cart:", existingItem);
+
+
+
+    if (existingItem) {
+      existingItem.quantity += quantity;
+    } else {
+      userCart.books.push({ bookId, quantity, price });
+    }
+  }
+
+  userCart.totalPrice = userCart.books.reduce((total, bookItem) => total + bookItem.price * bookItem.quantity, 0);
+  
+  await userCart.save();
+
+  return sendResponse(
+    res,
+    StatusCodes.OK,
+    true,
+    userCart.books,
+    null,
+    "Cart updated successfully"
+  );
+});
+
+// Remove a book from the cart
+cartController.removeBookFromCart = catchAsync(async (req, res) => {
+  const userId = req.userId;
+  const { bookId } = req.body;
+
+  let cart = await Cart.findOne({ userId });
+  if (!cart) {
     return sendResponse(
       res,
       StatusCodes.NOT_FOUND,
       false,
       null,
-      "Book not found",
-      "Cart update failed"
+      "Cart not found",
+      "Remove book failed"
     );
   }
 
-  const originalPrice = book.price;
-  const discountPrice = book.discountedPrice || originalPrice;
-  const discountRate = book.discountRate || 0;
-
-  const totalPrice = parseFloat(discountPrice) * parseInt(quantity);
-
-  const name = book.name;
-
-  let cart = await Cart.findOne({ userId });
-
-  if (!cart) {
-    if (quantity > 0) {
-      cart = new Cart({
-        userId,
-        books: [
-          {
-            bookId,
-            name,
-            quantity: parseInt(quantity),
-            originalPrice,
-            discountPrice,
-            discountRate,
-            totalPrice, 
-          },
-        ],
-      });
-    } else {
-      return sendResponse(
-        res,
-        StatusCodes.BAD_REQUEST,
-        false,
-        null,
-        "Cannot add a book with quantity 0",
-        "Cart update failed"
-      );
-    }
-  } else {
-    let bookExists = false;
-
-    cart.books = cart.books.map((bookItem) => {
-      if (bookItem.bookId.toString() === bookId) {
-        if (parseInt(quantity) === 0) {
-          return null; 
-        } else {
-          bookExists = true;
-          return {
-            ...bookItem,
-            name,
-            quantity: parseInt(quantity),
-            discountPrice,
-            discountRate,
-            totalPrice: parseFloat(discountPrice) * parseInt(quantity), // Tính toán lại totalPrice
-          };
-        }
-      }
-      return bookItem;
-    });
-
-    cart.books = cart.books.filter((book) => book !== null); // Loại bỏ sách có quantity 0
-
-    if (!bookExists && parseInt(quantity) > 0) {
-      cart.books.push({
-        bookId,
-        name,
-        quantity: parseInt(quantity),
-        originalPrice,
-        discountPrice,
-        discountRate,
-        totalPrice: parseFloat(discountPrice) * parseInt(quantity), // Tính toán totalPrice mới
-      });
-    }
-  }
-
-  cart.totalPrice = cart.books.reduce((total, bookItem) => {
-    return total + bookItem.totalPrice;
-  }, 0);
+  cart.books = cart.books.filter(
+    (bookItem) => bookItem.bookId.toString() !== bookId
+  );
+  cart.totalPrice = cart.books.reduce(
+    (total, bookItem) => total + bookItem.totalPrice,
+    0
+  );
 
   await cart.save();
   return sendResponse(
@@ -129,18 +126,26 @@ cartController.addOrUpdateBookInCart = catchAsync(async (req, res) => {
     true,
     cart,
     null,
-    "Cart updated successfully"
+    "Book removed from cart successfully"
   );
 });
 
-
-
-//Delete cart
+// Clear the cart
 cartController.clearCart = catchAsync(async (req, res) => {
-  const { userId } = req.params;
+  const userId = req.userId;
+
+  if (!userId) {
+    return sendResponse(
+      res,
+      StatusCodes.BAD_REQUEST,
+      false,
+      null,
+      "User ID is required",
+      "Clear cart failed"
+    );
+  }
 
   let cart = await Cart.findOne({ userId });
-
   if (!cart) {
     return sendResponse(
       res,
@@ -167,9 +172,10 @@ cartController.clearCart = catchAsync(async (req, res) => {
   );
 });
 
+
 // Get the user's cart
 cartController.getCart = catchAsync(async (req, res) => {
-  const { userId } = req.params;
+  const userId = req.userId;
   const cart = await Cart.findOne({ userId }).populate("books.bookId");
 
   if (!cart) {
@@ -185,5 +191,161 @@ cartController.getCart = catchAsync(async (req, res) => {
     "Cart retrieved successfully"
   );
 });
+
+cartController.syncCartAfterLogin = catchAsync(async (req, res) => {
+  const { userId, cart } = req.body;
+
+  // Tìm giỏ hàng hiện tại của người dùng
+  let userCart = await Cart.findOne({ userId });
+
+  if (!userCart) {
+    // Nếu giỏ hàng không tồn tại, tạo giỏ hàng mới từ local cart
+    userCart = new Cart({
+      userId,
+      books: cart.map((item) => ({
+        bookId: item.bookId,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+    });
+  } else {
+    // Nếu giỏ hàng đã tồn tại, cập nhật từng sách
+    cart.forEach((localItem) => {
+      const existingItem = userCart.books.find(
+        (item) => item.bookId.toString() === localItem.bookId
+      );
+
+      if (existingItem) {
+        // Nếu sách đã có trong giỏ, tăng số lượng
+        existingItem.quantity += localItem.quantity;
+      } else {
+        // Nếu sách chưa có, thêm vào giỏ hàng
+        userCart.books.push({
+          bookId: localItem.bookId,
+          quantity: localItem.quantity,
+          price: localItem.price,
+        });
+      }
+    });
+  }
+
+  // Tính toán tổng giá trị của giỏ hàng
+  userCart.totalPrice = userCart.books.reduce(
+    (total, bookItem) => total + bookItem.price * bookItem.quantity,
+    0
+  );
+
+  await userCart.save();
+
+  return sendResponse(
+    res,
+    StatusCodes.OK,
+    true,
+    userCart.books,
+    null,
+    "Cart synced successfully after login"
+  );
+});
+
+
+// Update the quantity of a book in the cart
+cartController.updateBookQuantity = catchAsync(async (req, res) => {
+  const userId = req.userId;
+  const { bookId, quantity } = req.body;
+
+  if (quantity < 1) {
+    return sendResponse(
+      res,
+      StatusCodes.BAD_REQUEST,
+      false,
+      null,
+      "Quantity must be at least 1",
+      "Update quantity failed"
+    );
+  }
+
+  let cart = await Cart.findOne({ userId });
+  if (!cart) {
+    return sendResponse(
+      res,
+      StatusCodes.NOT_FOUND,
+      false,
+      null,
+      "Cart not found",
+      "Update quantity failed"
+    );
+  }
+
+  const bookIndex = cart.books.findIndex(
+    (item) => item.bookId.toString() === bookId.toString()
+  );
+
+  if (bookIndex === -1) {
+    return sendResponse(
+      res,
+      StatusCodes.NOT_FOUND,
+      false,
+      null,
+      "Book not found in cart",
+      "Update quantity failed"
+    );
+  }
+
+  cart.books[bookIndex].quantity = quantity;
+
+  cart.totalPrice = cart.books.reduce(
+    (total, bookItem) => total + bookItem.price * bookItem.quantity,
+    0
+  );
+
+  await cart.save();
+
+  return sendResponse(
+    res,
+    StatusCodes.OK,
+    true,
+    cart,
+    null,
+    "Quantity updated successfully"
+  );
+});
+
+cartController.removeBookFromCart = catchAsync(async (req, res) => {
+  const userId = req.userId;
+  const { bookId } = req.body;
+
+  let cart = await Cart.findOne({ userId });
+  if (!cart) {
+    return sendResponse(
+      res,
+      StatusCodes.NOT_FOUND,
+      false,
+      null,
+      "Cart not found",
+      "Remove book failed"
+    );
+  }
+
+  cart.books = cart.books.filter(
+    (bookItem) => bookItem.bookId.toString() !== bookId
+  );
+
+  cart.totalPrice = cart.books.reduce(
+    (total, bookItem) => total + bookItem.price * bookItem.quantity,
+    0
+  );
+
+  await cart.save();
+
+  return sendResponse(
+    res,
+    StatusCodes.OK,
+    true,
+    cart,
+    null,
+    "Book removed from cart successfully"
+  );
+});
+
 
 module.exports = cartController;

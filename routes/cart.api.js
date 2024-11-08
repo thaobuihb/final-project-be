@@ -5,43 +5,70 @@ const authentication = require("../middlewares/authentication");
 // const validators = require("../middlewares/validators");
 
 /**
- * @route POST /carts/:userId
+ * @route POST /carts
  * @description Add/update book in the cart
  * @body { bookId, quantity }
  * @access User
  */
 router.post(
   "/",
-  authentication.loginRequired,
-  // validators.validateObjectId("userId"),
+  // authentication.loginRequired,
   cartController.addOrUpdateBookInCart
 );
 
 /**
- * @route GET /carts/:userId  
- * @description Get all cart of a user
- * @body { bookId, quantity }
+ * @route GET /carts
+ * @description Get all items in the cart of a user
  * @access User
  */
-
 router.get(
-  "/:userId",
+  "/",
   authentication.loginRequired,
-  // validators.validateObjectId("userId"),
   cartController.getCart
 );
 
 /**
- * @route DELETE /carts/:userId
- * @description Delete cart
- * @body {}
+ * @route DELETE /carts
+ * @description Clear the cart of a user
  * @access User
  */
 router.delete(
-  "/:userId",
+  "/",
   authentication.loginRequired,
-  // validators.validateObjectId("userId"),
   cartController.clearCart
+);
+
+/**
+ * @route POST /carts/sync
+ * @description Sync local cart with server cart after login
+ * @body { userId, cart }
+ * @access User
+ */
+router.post("/sync", authentication.loginRequired, cartController.syncCartAfterLogin);
+
+
+/**
+ * @route PUT /carts/update
+ * @description Update the quantity of a book in the cart
+ * @body { bookId, quantity }
+ * @access User
+ */
+router.put(
+  "/update",
+  authentication.loginRequired,
+  cartController.updateBookQuantity
+);
+
+/**
+ * @route DELETE /carts/item
+ * @description Remove a book from the cart
+ * @body { bookId }
+ * @access User
+ */
+router.delete(
+  "/item",
+  authentication.loginRequired,
+  cartController.removeBookFromCart
 );
 
 module.exports = router;

@@ -122,4 +122,16 @@ router.delete(
  */
 router.post('/wishlist', bookController.getBooksByIds);
 
+
+/**
+ * @route POST /books/carts
+ * @description Get books by a list of IDs for cart
+ * @body { bookIds: [Array of book IDs] }
+ * @access Public
+ */
+router.post('/carts', bookController.getBooksByCartIds);
+
+
+
+
 module.exports = router

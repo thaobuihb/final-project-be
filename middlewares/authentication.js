@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY || process.env.JWT_SECRET; // Dùng một biến môi trường
+const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY || process.env.JWT_SECRET; 
 const { AppError, sendResponse } = require("../helpers/utils");
 const { StatusCodes } = require("http-status-codes");
 
@@ -9,6 +9,7 @@ const authentication = {};
 authentication.loginRequired = (req, res, next) => {
   try {
     const tokenString = req.headers.authorization;
+    console.log("Received token:", tokenString);
     if (!tokenString) {
       throw new AppError(
         StatusCodes.UNAUTHORIZED,
