@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bookController = require("../controllers/book.controller");
 const authentication = require("../middlewares/authentication");
-const validators = require("../middlewares/validators")
+const validators = require("../middlewares/validators");
 
 /**
  * @route POST /books/
@@ -11,13 +11,12 @@ const validators = require("../middlewares/validators")
  * @access admin
  */
 router.post(
-    '/',
-    authentication.loginRequired,
-    authentication.authorize(["admin"]),
-    validators.validate(validators.createBookValidator),
-    bookController.createBook
-  );
-  
+  '/',
+  authentication.loginRequired,
+  authentication.authorize(["admin"]),
+  validators.validate(validators.createBookValidator),
+  bookController.createBook
+);
 
 /**
  * @route GET /books
@@ -25,10 +24,7 @@ router.post(
  * @body none
  * @access Public
  */
-router.get(
-    '/',
-    bookController.getAllBooks
-  );
+router.get('/', bookController.getAllBooks);
 
 /**
  * @route GET /books/new-released
@@ -36,23 +32,22 @@ router.get(
  * @body none
  * @access Public
  */
-router.get(
-  '/new-released',
-  bookController.getNewlyReleasedBooks
-);
+router.get('/new-released', bookController.getNewlyReleasedBooks);
 
-  /**
+/**
  * @route GET /books/discounted
  * @description Get all discounted books
  * @body none
  * @access Public
  */
-router.get(
-  '/discounted',
-  bookController.getDiscountedBooks
-);
+router.get('/discounted', bookController.getDiscountedBooks);
 
-
+/**
+ * @route GET /books/categories
+ * @description Get list of book categories
+ * @body none
+ * @access Public
+ */
 router.get('/categories', bookController.getCategoryOfBooks);
 
 /**
@@ -61,24 +56,15 @@ router.get('/categories', bookController.getCategoryOfBooks);
  * @body none
  * @access Public
  */
-
-router.get(
-    '/:id',
-    validators.validateObjectId("id"),
-    bookController.getBookById
-  );
+router.get('/:id', validators.validateObjectId("id"), bookController.getBookById);
 
 /**
- * @route GET /books/:categoryId
- * @description Get book by categoryId
+ * @route GET /books/category/:categoryId
+ * @description Get books by categoryId
  * @body none
  * @access Public
  */
-
-router.get(
-  '/category/:categoryId',
-  bookController.getBooksByCategoryId
-);
+router.get('/category/:categoryId', bookController.getBooksByCategoryId);
 
 /**
  * @route PUT /books/:id
@@ -86,17 +72,13 @@ router.get(
  * @body { name, author, price, publicationDate }
  * @access admin
  */
-
-
-
 router.put(
-    '/:id',
-    authentication.loginRequired,
-    authentication.authorize(["admin"]),
-    validators.validateObjectId("id"),
-    bookController.updateBook
-  );
-
+  '/:id',
+  authentication.loginRequired,
+  authentication.authorize(["admin"]),
+  validators.validateObjectId("id"),
+  bookController.updateBook
+);
 
 /**
  * @route DELETE /books/:id
@@ -104,24 +86,21 @@ router.put(
  * @body none
  * @access admin
  */
-
 router.delete(
-    '/:id',
-    authentication.loginRequired,
-    authentication.authorize(["admin"]),
-    validators.validateObjectId("id"),
-    bookController.deleteBook
-  );
+  '/:id',
+  authentication.loginRequired,
+  authentication.authorize(["admin"]),
+  validators.validateObjectId("id"),
+  bookController.deleteBook
+);
 
-
-  /**
+/**
  * @route POST /books/wishlist
  * @description Get books by a list of IDs
  * @body { bookIds: [Array of book IDs] }
  * @access Public
  */
 router.post('/wishlist', bookController.getBooksByIds);
-
 
 /**
  * @route POST /books/carts
@@ -131,7 +110,16 @@ router.post('/wishlist', bookController.getBooksByIds);
  */
 router.post('/carts', bookController.getBooksByCartIds);
 
+/**
+ * @route GET /books/:bookId/with-category
+ * @description Get book details along with books from the same category
+ * @body none
+ * @access Public
+ */
+router.get(
+  '/:bookId/with-category',
+  validators.validateObjectId("bookId"),
+  bookController.getBookWithCategory
+);
 
-
-
-module.exports = router
+module.exports = router;
