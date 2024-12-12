@@ -5,6 +5,7 @@ const { StatusCodes } = require("http-status-codes");
 
 const userController = {};
 
+// Đăng ký người dùng mới
 userController.register = catchAsync(async (req, res, next) => {
   let { name, email, password } = req.body;
 
@@ -31,9 +32,9 @@ userController.register = catchAsync(async (req, res, next) => {
   );
 });
 
+// Lấy tất cả người dùng (ngoại trừ admin)
 userController.getUsers = catchAsync(async (req, res, next) => {
   const users = await User.find({ isDeleted: false, role: { $ne: "admin" } });
-
   sendResponse(
     res,
     StatusCodes.OK,
@@ -44,6 +45,7 @@ userController.getUsers = catchAsync(async (req, res, next) => {
   );
 });
 
+// Lấy thông tin người dùng hiện tại
 userController.getCurrentUser = catchAsync(async (req, res, next) => {
   const currentUserId = req.userId;
 
@@ -67,6 +69,7 @@ userController.getCurrentUser = catchAsync(async (req, res, next) => {
   );
 });
 
+// Lấy thông tin người dùng theo ID
 userController.getUserById = catchAsync(async (req, res, next) => {
   const userId = req.params.id;
   const currentUserId = req.userId;
@@ -100,6 +103,7 @@ userController.getUserById = catchAsync(async (req, res, next) => {
   );
 });
 
+// Cập nhật thông tin người dùng
 userController.updateUser = catchAsync(async (req, res, next) => {
   const currentUserId = req.userId;
   const userId = req.params.id;
@@ -128,9 +132,13 @@ userController.updateUser = catchAsync(async (req, res, next) => {
     password,
     gender,
     birthday,
-    address,
     city,
     state,
+    district,
+    ward,
+    street,
+    houseNumber,
+    phone,
     zipcode,
     role,
   } = req.body;
@@ -140,9 +148,13 @@ userController.updateUser = catchAsync(async (req, res, next) => {
   user.email = email || user.email;
   user.gender = gender || user.gender;
   user.birthday = birthday || user.birthday;
-  user.address = address || user.address;
   user.city = city || user.city;
   user.state = state || user.state;
+  user.district = district || user.district;
+  user.ward = ward || user.ward;
+  user.street = street || user.street;
+  user.houseNumber = houseNumber || user.houseNumber;
+  user.phone = phone || user.phone;
   user.zipcode = zipcode || user.zipcode;
   user.role = role || user.role;
 
@@ -163,6 +175,7 @@ userController.updateUser = catchAsync(async (req, res, next) => {
   );
 });
 
+// Xóa người dùng
 userController.deleteUser = catchAsync(async (req, res, next) => {
   const userId = req.params.id;
 

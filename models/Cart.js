@@ -15,11 +15,20 @@ const cartSchema = new mongoose.Schema({
     },
   ],
   totalPrice: { type: Number, default: 0 },
+  purchaseHistory: [
+    {
+      bookId: { type: mongoose.Schema.Types.ObjectId, ref: "Book", required: true },
+      name: { type: String, required: true },
+      price: { type: Number, required: true },
+      quantity: { type: Number, required: true },
+      purchasedAt: { type: Date, default: Date.now },
+    },
+  ],
 });
 
 cartSchema.methods.toJSON = function () {
   const cart = this._doc;
-  delete cart.isDeleted;
+  delete cart.isDeleted; 
   return cart;
 };
 

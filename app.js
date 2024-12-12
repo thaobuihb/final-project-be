@@ -29,6 +29,8 @@ app.use('/api', indexRouter);
 //Errors Handlers
 //Catch 404
 app.use((req, res, next) => {
+  // console.log("Route nhận được:", req.method, req.originalUrl);
+
     const err = new Error("Not Found");
   err.statusCode = StatusCodes.NOT_FOUND;
   next(err);

@@ -3,223 +3,328 @@ const Order = require("../models/Order");
 const Book = require("../models/Book");
 const User = require("../models/User");
 const Cart = require("../models/Cart");
-const orderController = {};
 const { StatusCodes } = require("http-status-codes");
+const { v4: uuidv4 } = require("uuid");
 
-orderController.createOrder = catchAsync(async (req, res, next) => {
+const orderController = {};
+
+// Tạo đơn hàng
+orderController.createOrder = catchAsync(async (req, res) => {
   const { userId } = req.params;
-
   const { books, shippingAddress, paymentMethods } = req.body;
 
+  console.log("Dữ liệu nhận được trong req.body:", req.body);
+
+  // 1. Kiểm tra người dùng
   const user = await User.findById(userId);
   if (!user) {
-    throw new AppError(
-      StatusCodes.NOT_FOUND,
-      "User not found",
-      "Create Order Error"
-    );
+    throw new AppError(StatusCodes.NOT_FOUND, "Không tìm thấy người dùng", "Create Order Error");
   }
 
-  const orderedBooks = [];
-  for (const { bookId, quantity } of books) {
-    const book = await Book.findById(bookId);
-    if (!book) {
-      throw new AppError(
-        StatusCodes.NOT_FOUND,
-        `Book not found: ${bookId}`,
-        "Create Order Error"
-      );
+  // 2. Kiểm tra danh sách sách
+  if (!Array.isArray(books) || books.length === 0) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "Không có sách trong đơn hàng", "Create Order Error");
+  }
+
+  // 3. Kiểm tra phương thức thanh toán
+  const validPaymentMethods = ["After receive", "PayPal"];
+  const trimmedPaymentMethod = paymentMethods?.trim();
+  if (!trimmedPaymentMethod || !validPaymentMethods.includes(trimmedPaymentMethod)) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "Phương thức thanh toán không hợp lệ", "Create Order Error");
+  }
+
+  // 4. Kiểm tra thông tin giao hàng
+  const requiredAddressFields = [
+    "fullName",
+    "phone",
+    "addressLine",
+    "city",
+    "state",
+    "zipcode",
+    "country",
+  ];
+
+  for (const field of requiredAddressFields) {
+    if (!shippingAddress || !shippingAddress[field]) {
+      throw new AppError(StatusCodes.BAD_REQUEST, `Trường "${field}" trong địa chỉ giao hàng là bắt buộc`, "Create Order Error");
     }
-
-    const name = book.name;
-    const price = book.price;
-    const total = (quantity * price).toFixed(2);
-
-    orderedBooks.push({ bookId, name, quantity, price, total });
   }
 
-  const totalAmount = orderedBooks
-    .reduce((total, { total: bookTotal }) => {
-      const bookTotalNumber = parseFloat(bookTotal);
-      return total + (isNaN(bookTotalNumber) ? 0 : bookTotalNumber);
-    }, 0)
-    .toFixed(2);
+  // 5. Xử lý sách
+  const orderedBooks = await Promise.all(
+    books.map(async ({ bookId, quantity }) => {
+      const book = await Book.findById(bookId);
+      if (!book) {
+        throw new AppError(StatusCodes.NOT_FOUND, `Không tìm thấy sách: ${bookId}`, "Create Order Error");
+      }
 
+      const price = book.discountedPrice || book.price;
+      return {
+        bookId,
+        name: book.name,
+        quantity,
+        price,
+        total: (quantity * price).toFixed(2),
+      };
+    })
+  );
+
+  // 6. Tính tổng tiền và phí vận chuyển
+  const totalItemPrice = orderedBooks.reduce((sum, item) => sum + parseFloat(item.total), 0);
+  const shippingFee = 3.0; // Phí vận chuyển cố định
+  const calculatedTotalAmount = totalItemPrice + shippingFee;
+
+  // 7. Xác định trạng thái thanh toán
+  const paymentStatus = trimmedPaymentMethod === "PayPal" ? "Paid" : "Unpaid";
+
+  // 8. Cập nhật lịch sử mua hàng trong giỏ hàng
+  const cart = await Cart.findOne({ userId });
+  if (cart) {
+    cart.purchaseHistory = [
+      ...cart.purchaseHistory,
+      ...orderedBooks.map((book) => ({
+        bookId: book.bookId,
+        name: book.name,
+        price: book.price,
+        quantity: book.quantity,
+        purchasedAt: new Date(),
+      })),
+    ];
+    await cart.save();
+  }
+
+  // 9. Tạo mã đơn hàng
+  const orderCode = `ORDER-${uuidv4()}`;
+
+  // 10. Lưu đơn hàng vào cơ sở dữ liệu
   const order = await Order.create({
+    orderCode,
     userId,
     books: orderedBooks,
-    status: "Processing",
-    paymentMethods,
-    totalAmount,
     shippingAddress,
+    paymentMethods,
+    paymentStatus,
+    totalAmount: calculatedTotalAmount,
+    shippingFee,
+    status: "Processing",
   });
 
-  const bookIds = orderedBooks.map(({ bookId }) => bookId);
-  await Cart.updateOne(
-    { userId },
-    { $pull: { books: { bookId: { $in: bookIds } } } }
-  );
-
-  sendResponse(
-    res,
-    StatusCodes.CREATED,
-    true,
-    order,
-    null,
-    "Order created successfully"
-  );
-});
-
-orderController.getOrdersByUserId = catchAsync(async (req, res, next) => {
-  const userId = req.params.userId;
-
-  const orders = await Order.find({ userId, isDeleted: false });
-
-  for (const order of orders) {
-    for (const book of order.books) {
-      const foundBook = await Book.findById(book.bookId);
-      if (foundBook) book.name = foundBook.name;
-    }
+  // 11. Xóa sách đã mua khỏi giỏ hàng
+  if (cart) {
+    cart.books = cart.books.filter(
+      (cartItem) => !orderedBooks.find((book) => book.bookId.toString() === cartItem.bookId.toString())
+    );
+    await cart.save();
   }
-  sendResponse(res, 200, true, orders, null, "Orders retrieved successfully");
+
+  // 12. Phản hồi
+  sendResponse(res, StatusCodes.CREATED, true, order, null, "Đơn hàng được tạo thành công");
 });
 
-orderController.getOrderById = catchAsync(async (req, res, next) => {
+
+orderController.getOrdersByUserId = catchAsync(async (req, res) => {
+  const orders = await Order.find({ userId: req.params.userId, isDeleted: false });
+  sendResponse(res, StatusCodes.OK, true, orders, null, "Orders retrieved successfully");
+});
+
+orderController.getOrderById = catchAsync(async (req, res) => {
   const { userId, orderId } = req.params;
 
-  const order = await Order.findOne({ userId, _id: orderId, isDeleted: false });
+  // Tìm đơn hàng và populate thông tin sách từ collection Book
+  const order = await Order.findOne({
+    userId,
+    _id: orderId,
+    isDeleted: false,
+  }).populate({
+    path: "books.bookId",
+    select: "name img", 
+  });
 
   if (!order) {
-    throw new AppError(
-      StatusCodes.NOT_FOUND,
-      "Order not found",
-      "Get Order Error"
-    );
+    throw new AppError(StatusCodes.NOT_FOUND, "Order not found", "Get Order Error");
   }
+
+  // Ánh xạ thông tin để đảm bảo sách bao gồm dữ liệu cần thiết
+  const populatedOrder = {
+    ...order.toObject(),
+    books: order.books.map((book) => ({
+      bookId: book.bookId?._id || book.bookId,
+      name: book.bookId?.name || book.name,
+      img: book.bookId?.img || "/default-book.jpg",
+      quantity: book.quantity,
+      price: book.price,
+      total: book.total,
+    })),
+  };
 
   sendResponse(
     res,
     StatusCodes.OK,
     true,
-    order,
+    populatedOrder,
     null,
     "Order retrieved successfully"
   );
 });
 
-orderController.updateOrderByUser = catchAsync(async (req, res, next) => {
-  const { userId, orderId } = req.params;
+
+orderController.updateOrderByUser = catchAsync(async (req, res) => {
   const { status } = req.body;
-
-  const order = await Order.findOne({ userId, _id: orderId, isDeleted: false });
-
-  if (!order) {
-    throw new AppError(StatusCodes.NOT_FOUND, "Order not found", "Order Error");
-  }
-
-  if (
-    order.status === "Shipped" ||
-    order.status === "Delivered" ||
-    order.status === "Returned" ||
-    order.status === "Cancelled"
-  ) {
-    return sendResponse(
-      res,
-      StatusCodes.FORBIDDEN,
-      false,
-      null,
-      null,
-      "Order cannot be updated "
-    );
-  }
-
-  if (status !== "Cancelled") {
-    return sendResponse(
-      res,
-      StatusCodes.BAD_REQUEST,
-      false,
-      null,
-      null,
-      "Invalid status update"
-    );
-  }
-
-  order.status = status;
-  await order.save();
-
-  sendResponse(
-    res,
-    StatusCodes.OK,
-    true,
-    order,
-    null,
-    `Order ${status} successfully`
+  const order = await Order.findOneAndUpdate(
+    { userId: req.params.userId, _id: req.params.orderId, isDeleted: false, status: "Processing" },
+    { status: status === "Cancelled" ? "Cancelled" : order.status },
+    { new: true }
   );
+
+  if (!order) throw new AppError(StatusCodes.NOT_FOUND, "Order not found or already processed", "Update Order Error");
+
+  sendResponse(res, StatusCodes.OK, true, order, null, "Order updated successfully");
 });
 
-orderController.getAllOrders = catchAsync(async (req, res, next) => {
+orderController.getAllOrders = catchAsync(async (req, res) => {
   const orders = await Order.find({ isDeleted: false });
-  return sendResponse(
-    res,
-    StatusCodes.OK,
-    true,
-    orders,
-    "Orders retrieved successfully"
-  );
+  sendResponse(res, StatusCodes.OK, true, orders, null, "Orders retrieved successfully");
 });
 
-orderController.updateOrderAD = catchAsync(async (req, res, next) => {
-  const { orderId } = req.params;
+orderController.updateOrderAD = catchAsync(async (req, res) => {
   const { status } = req.body;
+  const order = await Order.findOneAndUpdate(
+    { _id: req.params.orderId, isDeleted: false },
+    { status },
+    { new: true }
+  );
 
-  const order = await Order.findOne({ _id: orderId, isDeleted: false });
+  if (!order) throw new AppError(StatusCodes.NOT_FOUND, "Order not found", "Update Order Error");
 
-  if (!order) {
-    throw new AppError(StatusCodes.NOT_FOUND, "Order not found", "Order Error");
-  }
+  sendResponse(res, StatusCodes.OK, true, order, null, "Order status updated successfully");
+});
 
-  if (order.status === "Cancelled") {
-    throw new AppError(
-      StatusCodes.NOT_FOUND,
-      "Order is already cancelled",
-      "Order Error"
-    );
-  }
+orderController.deleteOrder = catchAsync(async (req, res) => {
+  const order = await Order.findOneAndUpdate(
+    { userId: req.params.userId, _id: req.params.orderId, isDeleted: false },
+    { isDeleted: true },
+    { new: true }
+  );
 
-  order.status = status;
-  await order.save();
+  if (!order) throw new AppError(StatusCodes.NOT_FOUND, "Order not found", "Delete Order Error");
+
+  sendResponse(res, StatusCodes.OK, true, null, null, "Order deleted successfully");
+});
+
+orderController.updatePaymentStatus = catchAsync(async (req, res) => {
+  const { paymentStatus } = req.body;
+  const order = await Order.findByIdAndUpdate(
+    req.params.orderId,
+    { paymentStatus },
+    { new: true }
+  );
+
+  if (!order) throw new AppError(StatusCodes.NOT_FOUND, "Order not found", "Update Payment Status Error");
+
+  sendResponse(res, StatusCodes.OK, true, order, null, "Payment status updated successfully");
+});
+
+orderController.getOrdersByStatus = catchAsync(async (req, res) => {
+  const { status } = req.params;
+  const orders = await Order.find({ status, isDeleted: false });
+
+  sendResponse(res, StatusCodes.OK, true, orders, null, `Orders with status ${status} retrieved successfully`);
+});
+
+orderController.trackOrderStatus = catchAsync(async (req, res) => {
+  const order = await Order.findOne({ _id: req.params.orderId, userId: req.user.id, isDeleted: false });
+
+  if (!order) throw new AppError(StatusCodes.NOT_FOUND, "Order not found", "Track Order Status Error");
+
+  sendResponse(res, StatusCodes.OK, true, { status: order.status }, null, "Order status retrieved successfully");
+});
+
+orderController.updateShippingAddress = catchAsync(async (req, res) => {
+  const { shippingAddress } = req.body;
+  const order = await Order.findOneAndUpdate(
+    { _id: req.params.orderId, userId: req.user.id, status: "Processing", isDeleted: false },
+    { shippingAddress },
+    { new: true }
+  );
+
+  if (!order) throw new AppError(StatusCodes.NOT_FOUND, "Order not found or not eligible for address change", "Update Shipping Address Error");
+
+  sendResponse(res, StatusCodes.OK, true, order, null, "Shipping address updated successfully");
+});
+
+orderController.addOrderFeedback = catchAsync(async (req, res) => {
+  const { feedback } = req.body;
+  const order = await Order.findOneAndUpdate(
+    { _id: req.params.orderId, userId: req.user.id, status: "Delivered", isDeleted: false },
+    { feedback },
+    { new: true }
+  );
+
+  if (!order) throw new AppError(StatusCodes.NOT_FOUND, "Order not found or not eligible for feedback", "Add Order Feedback Error");
+
+  sendResponse(res, StatusCodes.OK, true, order, null, "Feedback added successfully");
+});
+
+orderController.createGuestOrder = catchAsync(async (req, res) => {
+  const { books, shippingAddress, paymentMethod } = req.body;
+
+  const orderCode = `ORDER-${uuidv4()}`;
+
+  const newOrder = await Order.create({
+    orderCode,
+    books,
+    shippingAddress,
+    paymentMethod,
+    status: "Pending",
+    isGuestOrder: true,
+  });
 
   sendResponse(
     res,
-    StatusCodes.OK,
+    StatusCodes.CREATED,
     true,
-    order,
+    newOrder,
     null,
-    `Order ${status} successfully`
+    "Guest order created successfully"
   );
 });
 
-orderController.deleteOrder = catchAsync(async (req, res, next) => {
-  const { userId, orderId } = req.params;
 
-  const order = await Order.findOne({ userId, _id: orderId, isDeleted: false });
+// Lấy lịch sử mua hàng
+orderController.getPurchaseHistory = catchAsync(async (req, res) => {
+  const userId = req.params.userId || req.userId;
+  console.log("UserId trong getPurchaseHistory:", userId);
 
-  if (!order) {
-    throw new AppError(StatusCodes.NOT_FOUND, "Order not found", "Order Error");
+  const orders = await Order.find({ userId })
+    .populate("books.bookId", "name img price discountedPrice")
+    .exec();
+
+  console.log("Lịch sử mua hàng:", orders);
+
+  if (!orders || orders.length === 0) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Không tìm thấy lịch sử mua hàng", "Get Purchase History Error");
   }
 
-  order.isDeleted = true;
+  const purchaseHistory = orders.map((order) => ({
+    _id: order._id,
+    orderCode: order.orderCode,
+    createdAt: order.createdAt,
+    shippingFee: order.shippingFee || 3.0,
+    totalAmount: order.totalAmount,
+    paymentStatus: order.paymentStatus,
+    books: order.books.map((book) => ({
+      bookId: book.bookId?._id || book.bookId,
+      name: book.bookId?.name || book.name,
+      img: book.bookId?.img || "/default-book.jpg",
+      price: book.price,
+      quantity: book.quantity,
+      total: book.total,
+    })),
+  }));
 
-  await order.save();
-
-  sendResponse(
-    res,
-    StatusCodes.OK,
-    true,
-    null,
-    null,
-    "Order deleted successfully"
-  );
+  sendResponse(res, StatusCodes.OK, true, purchaseHistory, null, "Lịch sử mua hàng được truy xuất thành công");
 });
+
+
 
 module.exports = orderController;

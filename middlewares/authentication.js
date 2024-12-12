@@ -8,6 +8,9 @@ const authentication = {};
 // Middleware yêu cầu đăng nhập
 authentication.loginRequired = (req, res, next) => {
   try {
+
+    console.log("Middleware authentication.loginRequired được gọi");
+
     const tokenString = req.headers.authorization;
     console.log("Received token:", tokenString);
     if (!tokenString) {
@@ -39,9 +42,11 @@ authentication.loginRequired = (req, res, next) => {
       // Gán thông tin người dùng vào request
       req.role = payload.role;
       req.userId = payload._id;
+      console.log("UserId từ token:123456", req.userId);
       next();
     });
   } catch (error) {
+    console.error("Error in loginRequired middleware: LOI", error);
     next(error);
   }
 };
