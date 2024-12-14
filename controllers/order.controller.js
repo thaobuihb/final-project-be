@@ -109,13 +109,13 @@ orderController.createOrder = catchAsync(async (req, res) => {
     status: "Processing",
   });
 
-  // 11. Xóa sách đã mua khỏi giỏ hàng
-  if (cart) {
-    cart.books = cart.books.filter(
-      (cartItem) => !orderedBooks.find((book) => book.bookId.toString() === cartItem.bookId.toString())
-    );
-    await cart.save();
-  }
+  // // 11. Xóa sách đã mua khỏi giỏ hàng
+  // if (cart) {
+  //   cart.books = cart.books.filter(
+  //     (cartItem) => !orderedBooks.find((book) => book.bookId.toString() === cartItem.bookId.toString())
+  //   );
+  //   await cart.save();
+  // }
 
   // 12. Phản hồi
   sendResponse(res, StatusCodes.CREATED, true, order, null, "Đơn hàng được tạo thành công");
@@ -293,37 +293,39 @@ orderController.createGuestOrder = catchAsync(async (req, res) => {
 // Lấy lịch sử mua hàng
 orderController.getPurchaseHistory = catchAsync(async (req, res) => {
   const userId = req.params.userId || req.userId;
-  console.log("UserId trong getPurchaseHistory:", userId);
+  // console.log("UserId nhận được trong getPurchaseHistory:", userId);
 
   const orders = await Order.find({ userId })
-    .populate("books.bookId", "name img price discountedPrice")
+    .populate({
+      path: "books.bookId",
+      select: "name img", 
+    })
     .exec();
-
-  console.log("Lịch sử mua hàng:", orders);
+  // console.log("Lịch sử mua hàng: *******", orders);
 
   if (!orders || orders.length === 0) {
-    throw new AppError(StatusCodes.NOT_FOUND, "Không tìm thấy lịch sử mua hàng", "Get Purchase History Error");
+    throw new AppError(
+      StatusCodes.NOT_FOUND,
+      "No purchase history found for the user",
+      "Get Purchase History Error"
+    );
   }
 
-  const purchaseHistory = orders.map((order) => ({
-    _id: order._id,
-    orderCode: order.orderCode,
-    createdAt: order.createdAt,
-    shippingFee: order.shippingFee || 3.0,
-    totalAmount: order.totalAmount,
-    paymentStatus: order.paymentStatus,
-    books: order.books.map((book) => ({
-      bookId: book.bookId?._id || book.bookId,
-      name: book.bookId?.name || book.name,
-      img: book.bookId?.img || "/default-book.jpg",
-      price: book.price,
-      quantity: book.quantity,
-      total: book.total,
-    })),
+  const ordersWithUserId = orders.map((order) => ({
+    ...order.toObject(),
+    userId, 
   }));
 
-  sendResponse(res, StatusCodes.OK, true, purchaseHistory, null, "Lịch sử mua hàng được truy xuất thành công");
+  sendResponse(
+    res,
+    StatusCodes.OK,
+    true,
+    ordersWithUserId, 
+    null,
+    "Purchase history retrieved successfully"
+  );
 });
+
 
 
 
