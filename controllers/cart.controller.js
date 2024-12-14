@@ -65,11 +65,11 @@ cartController.addOrUpdateBookInCart = catchAsync(async (req, res) => {
     });
   } else {
 
-    console.log("Updating existing cart for user:", userId);
+    // console.log("Updating existing cart for user:", userId);
 
     // Nếu giỏ hàng đã tồn tại, kiểm tra và thêm hoặc cập nhật sách
     const existingItem = userCart.books.find(item => item.bookId?.toString() === bookId.toString());
-    console.log("Existing item in cart:", existingItem);
+    // console.log("Existing item in cart:", existingItem);
 
 
 

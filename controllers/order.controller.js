@@ -13,7 +13,7 @@ orderController.createOrder = catchAsync(async (req, res) => {
   const { userId } = req.params;
   const { books, shippingAddress, paymentMethods } = req.body;
 
-  console.log("Dữ liệu nhận được trong req.body:", req.body);
+  // console.log("Dữ liệu nhận được trong req.body:", req.body);
 
   // 1. Kiểm tra người dùng
   const user = await User.findById(userId);
@@ -130,6 +130,9 @@ orderController.getOrdersByUserId = catchAsync(async (req, res) => {
 orderController.getOrderById = catchAsync(async (req, res) => {
   const { userId, orderId } = req.params;
 
+  console.log("UserId nhận được trong getOrderById:", userId);
+  console.log("OrderId nhận được trong getOrderById:", orderId);
+
   // Tìm đơn hàng và populate thông tin sách từ collection Book
   const order = await Order.findOne({
     userId,
@@ -137,10 +140,13 @@ orderController.getOrderById = catchAsync(async (req, res) => {
     isDeleted: false,
   }).populate({
     path: "books.bookId",
-    select: "name img", 
+    select: "name img",
   });
 
+  console.log("Chi tiết đơn hàng tìm được:", order);
+
   if (!order) {
+    console.error("Không tìm thấy đơn hàng với OrderId:", orderId);
     throw new AppError(StatusCodes.NOT_FOUND, "Order not found", "Get Order Error");
   }
 
@@ -156,6 +162,8 @@ orderController.getOrderById = catchAsync(async (req, res) => {
       total: book.total,
     })),
   };
+
+  // console.log("Chi tiết đơn hàng sau khi xử lý:$$$$$", populatedOrder);
 
   sendResponse(
     res,
