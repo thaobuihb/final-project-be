@@ -8,12 +8,20 @@ const authentication = {};
 // Middleware yêu cầu đăng nhập
 authentication.loginRequired = (req, res, next) => {
   try {
-
-    // console.log("Middleware authentication.loginRequired được gọi");
+    
+    // console.log("Request Headers:%%%%%", req.headers);
 
     const tokenString = req.headers.authorization;
-    // console.log("Received token:", tokenString);
+    // console.log("Authorization Header:", tokenString);
+
+    // Bỏ qua kiểm tra đăng nhập cho các route công khai
+    if (req.originalUrl.includes("/orders/guest")) {
+      // console.log("Public route accessed, skipping authentication:", req.originalUrl);
+      return next();
+    }
+
     if (!tokenString) {
+      console.error("Token not found in request headers.");
       throw new AppError(
         StatusCodes.UNAUTHORIZED,
         "Login Required",
@@ -22,15 +30,19 @@ authentication.loginRequired = (req, res, next) => {
     }
 
     const token = tokenString.replace("Bearer ", "");
+    // console.log("Extracted Token:", token);
+
     jwt.verify(token, JWT_SECRET_KEY, (err, payload) => {
       if (err) {
         if (err.name === "TokenExpiredError") {
+          console.error("Token expired.");
           throw new AppError(
             StatusCodes.UNAUTHORIZED,
             "Token expired",
             "Authentication Error"
           );
         } else {
+          console.error("Token is invalid.");
           throw new AppError(
             StatusCodes.UNAUTHORIZED,
             "Token is invalid",
@@ -39,17 +51,24 @@ authentication.loginRequired = (req, res, next) => {
         }
       }
 
+      
+      // console.log("Token Payload:", payload);
+
       // Gán thông tin người dùng vào request
       req.role = payload.role;
       req.userId = payload._id;
-      // console.log("UserId từ token:123456", req.userId);
+
+      
+      // console.log("UserId from Token:", req.userId);
+
       next();
     });
   } catch (error) {
-    // console.error("Error in loginRequired middleware: LOI", error);
+    console.error("Error in loginRequired middleware:", error.message);
     next(error);
   }
 };
+
 
 // Middleware kiểm tra vai trò người dùng
 authentication.authorize = (roles) => {
@@ -68,7 +87,7 @@ authentication.authorize = (roles) => {
         );
       }
 
-      next(); // Tiếp tục nếu người dùng có quyền hợp lệ
+      next(); 
     } catch (error) {
       return sendResponse(
         res,
@@ -84,15 +103,15 @@ authentication.authorize = (roles) => {
 
 // Middleware dành cho khách (guest)
 authentication.guestIdMiddleware = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1]; // Lấy token từ header Authorization
+  const token = req.headers.authorization?.split(' ')[1]; 
 
   if (!token) {
     return res.status(401).json({ message: "Token không được cung cấp" });
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET_KEY); // Xác minh token với secret
-    req.user = decoded; // Gán thông tin người dùng vào request
+    const decoded = jwt.verify(token, JWT_SECRET_KEY); 
+    req.user = decoded; 
     next();
   } catch (error) {
     return res.status(401).json({ message: "Token không hợp lệ", error });

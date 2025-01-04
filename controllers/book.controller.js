@@ -117,6 +117,113 @@ bookController.getAllBooks = catchAsync(async (req, res, next) => {
   sendResponse(res, StatusCodes.OK, true, response, null, "Books retrieved successfully");
 });
 
+
+//admin get books
+// Get all books for admin
+bookController.getAdminBooks = catchAsync(async (req, res, next) => {
+  const {
+    page = 1,
+    limit = 30,
+    search,
+    minPrice,
+    maxPrice,
+    category,
+    sortBy = "createdAt",
+    sortOrder = "desc",
+  } = req.query;
+
+  // Chuyển đổi các tham số thành số
+  const pageNumber = parseInt(page);
+  const limitNumber = parseInt(limit);
+  const skip = (pageNumber - 1) * limitNumber;
+
+  // Tạo query tìm kiếm
+  const searchQuery = {};
+
+  // Tìm kiếm theo từ khóa
+  if (search) {
+    const yearPattern = /\b\d{4}\b/;
+    const yearMatch = search.match(yearPattern);
+
+    if (yearMatch) {
+      searchQuery.publicationDate = { $regex: new RegExp(`\\b${yearMatch[0]}\\b`) };
+    } else {
+      searchQuery.$or = [
+        { name: { $regex: new RegExp(search, "i") } },
+        { author: { $regex: new RegExp(search, "i") } },
+        { description: { $regex: new RegExp(search, "i") } },
+      ];
+    }
+  }
+
+  // Lọc theo giá
+  if (minPrice && maxPrice) {
+    searchQuery.price = { $gte: parseFloat(minPrice), $lte: parseFloat(maxPrice) };
+  }
+
+  // Lọc theo danh mục
+  if (category) {
+    if (mongoose.Types.ObjectId.isValid(category)) {
+      searchQuery["category"] = new mongoose.Types.ObjectId(category);
+    } else {
+      searchQuery["categoryName"] = { $regex: new RegExp(category, "i") };
+    }
+  }
+
+  // Thực hiện query
+  const result = await Book.aggregate([
+    { $match: searchQuery },
+    {
+      $lookup: {
+        from: "categories",
+        localField: "category",
+        foreignField: "_id",
+        as: "category",
+      },
+    },
+    { $unwind: "$category" },
+    {
+      $project: {
+        name: 1,
+        author: 1,
+        price: 1,
+        discountedPrice: 1,
+        discountRate: 1,
+        publicationDate: 1,
+        img: 1,
+        description: 1,
+        stock: 1,
+        isDeleted: 1,
+        categoryName: "$category.categoryName",
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    },
+    { $sort: { [sortBy]: sortOrder === "desc" ? -1 : 1 } },
+    { $facet: {
+        paginatedBooks: [{ $skip: skip }, { $limit: limitNumber }],
+        totalCount: [{ $count: "total" }],
+      }
+    },
+  ]);
+
+  // Trả về dữ liệu
+  const { paginatedBooks, totalCount } = result[0];
+  const totalBooks = totalCount[0]?.total || 0;
+  const totalPages = Math.ceil(totalBooks / limitNumber);
+
+  sendResponse(
+    res,
+    StatusCodes.OK,
+    true,
+    { books: paginatedBooks, totalBooks, totalPages },
+    null,
+    "Books retrieved successfully for admin"
+  );
+});
+
+
+
 // Get book by id
 bookController.getBookById = catchAsync(async (req, res, next) => {
   const { id: bookId } = req.params;

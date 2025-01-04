@@ -185,33 +185,31 @@ categoryController.getPopularCategories = catchAsync(async (req, res, next) => {
   const popularCategories = await Category.aggregate([
       {
           $lookup: {
-              from: 'books', // Tên collection sách
-              localField: '_id', // Trường ID của danh mục
-              foreignField: 'categoryId', // Trường ID danh mục trong sách
-              as: 'books' // Kết quả sẽ được lưu vào biến 'books'
+              from: 'books', 
+              localField: '_id', 
+              foreignField: 'categoryId', 
+              as: 'books' 
           }
       },
       {
           $project: {
-              name: 1, // Lấy trường tên danh mục
-              bookCount: { $size: '$books' }, // Đếm số sách trong danh mục
-              representativeBook: { $arrayElemAt: ['$books.img', 0] } // Lấy ảnh của cuốn sách đầu tiên làm đại diện
+              name: 1, 
+              bookCount: { $size: '$books' }, 
+              representativeBook: { $arrayElemAt: ['$books.img', 0] } 
           }
       },
       {
-          $sort: { bookCount: -1 } // Sắp xếp theo số lượng sách giảm dần
+          $sort: { bookCount: -1 } 
       },
       {
-          $limit: 5 // Giới hạn số lượng danh mục phổ biến trả về
+          $limit: 5 
       }
   ]);
 
-  // Nếu không tìm thấy danh mục nào
   if (!popularCategories || popularCategories.length === 0) {
       return next(new AppError(StatusCodes.NOT_FOUND, "No popular categories found", "Category Error"));
   }
 
-  // Gửi phản hồi
   sendResponse(
       res,
       StatusCodes.OK,

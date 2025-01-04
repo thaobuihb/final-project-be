@@ -12,10 +12,10 @@ const userSchema = new Schema(
     birthday: { type: String, default: "" },
     city: { type: String, default: "" },
     state: { type: String, default: "" },
-    district: { type: String, default: "" }, // Quận/Huyện
-    ward: { type: String, default: "" }, // Xã/Phường/Thị trấn
-    street: { type: String, default: "" }, // Đường
-    houseNumber: { type: String, default: "" }, // Số nhà
+    district: { type: String, default: "" }, 
+    ward: { type: String, default: "" }, 
+    street: { type: String, default: "" }, 
+    houseNumber: { type: String, default: "" }, 
     phone: { type: String, default: "" },
     zipcode: { type: String, default: "" },
     role: { type: String, enum: ["admin", "customer"], default: "customer" },

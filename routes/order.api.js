@@ -6,10 +6,33 @@ const validators = require("../middlewares/validators");
 
 
 
+/**
+ * @route POST /orders/guest
+ * @description Create an order for guest users
+ * @body { books, shippingAddress, paymentMethod }
+ * @access Public
+ */
+router.post("/guest", orderController.createGuestOrder);
+
+
+
+/**
+ * @route GET /orders/guest/:orderCode
+ * @description Get guest order details by order code
+ * @body none
+ * @access Public
+ */
+router.get("/guest/:orderCode", (req, res, next) => {
+  console.log("Accessing route: /guest/:orderCode");
+  next();
+}, orderController.getGuestOrderByCode);
+
+
+
 router.get(
   "/purchase-history/:userId",
   (req, res, next) => {
-    console.log("Route nhận được: THAO", req.method, req.originalUrl);
+    // console.log("Route nhận được: THAO", req.method, req.originalUrl);
     next();
   },
   authentication.loginRequired,
@@ -180,15 +203,6 @@ router.delete(
   validators.validateObjectId("userId", "orderId"),
   orderController.deleteOrder
 );
-
-/**
- * @route POST /orders/guest
- * @description Create an order for guest users
- * @body { books, shippingAddress, paymentMethod }
- * @access Public
- */
-router.post("/guest", orderController.createGuestOrder);
-
 
 
 module.exports = router;

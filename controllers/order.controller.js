@@ -107,6 +107,7 @@ orderController.createOrder = catchAsync(async (req, res) => {
     totalAmount: calculatedTotalAmount,
     shippingFee,
     status: "Processing",
+    isGuestOrder: null,
   });
 
   // // 11. Xóa sách đã mua khỏi giỏ hàng
@@ -175,19 +176,29 @@ orderController.getOrderById = catchAsync(async (req, res) => {
   );
 });
 
-
+// Cancel đơn hàng
 orderController.updateOrderByUser = catchAsync(async (req, res) => {
+  const { userId, orderId } = req.params;
   const { status } = req.body;
-  const order = await Order.findOneAndUpdate(
-    { userId: req.params.userId, _id: req.params.orderId, isDeleted: false, status: "Processing" },
-    { status: status === "Cancelled" ? "Cancelled" : order.status },
-    { new: true }
-  );
 
-  if (!order) throw new AppError(StatusCodes.NOT_FOUND, "Order not found or already processed", "Update Order Error");
+  const order = await Order.findOne({ userId, _id: orderId, isDeleted: false });
+
+  if (!order) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Order not found", "Update Order Error");
+  }
+
+  if (order.status !== "Processing") {
+    throw new AppError(StatusCodes.BAD_REQUEST, "Only orders in 'Processing' status can be updated", "Update Order Error");
+  }
+
+  order.status = status === "Cancelled" ? "Cancelled" : order.status;
+  await order.save();
 
   sendResponse(res, StatusCodes.OK, true, order, null, "Order updated successfully");
 });
+
+
+
 
 orderController.getAllOrders = catchAsync(async (req, res) => {
   const orders = await Order.find({ isDeleted: false });
@@ -247,18 +258,30 @@ orderController.trackOrderStatus = catchAsync(async (req, res) => {
   sendResponse(res, StatusCodes.OK, true, { status: order.status }, null, "Order status retrieved successfully");
 });
 
+// update thông tin giao hàng
 orderController.updateShippingAddress = catchAsync(async (req, res) => {
+  const { userId, orderId } = req.params;
   const { shippingAddress } = req.body;
-  const order = await Order.findOneAndUpdate(
-    { _id: req.params.orderId, userId: req.user.id, status: "Processing", isDeleted: false },
-    { shippingAddress },
-    { new: true }
-  );
 
-  if (!order) throw new AppError(StatusCodes.NOT_FOUND, "Order not found or not eligible for address change", "Update Shipping Address Error");
+  const order = await Order.findOne({ userId, _id: orderId, status: "Processing", isDeleted: false });
+
+  if (!order) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Order not found or not eligible for address change", "Update Shipping Address Error");
+  }
+
+  const requiredFields = ["fullName", "phone", "addressLine", "city", "state", "zipcode", "country"];
+  for (const field of requiredFields) {
+    if (!shippingAddress[field]) {
+      throw new AppError(StatusCodes.BAD_REQUEST, `Missing field ${field} in shipping address`, "Update Shipping Address Error");
+    }
+  }
+
+  order.shippingAddress = shippingAddress;
+  await order.save();
 
   sendResponse(res, StatusCodes.OK, true, order, null, "Shipping address updated successfully");
 });
+
 
 orderController.addOrderFeedback = catchAsync(async (req, res) => {
   const { feedback } = req.body;
@@ -274,27 +297,98 @@ orderController.addOrderFeedback = catchAsync(async (req, res) => {
 });
 
 orderController.createGuestOrder = catchAsync(async (req, res) => {
-  const { books, shippingAddress, paymentMethod } = req.body;
+  const { books, shippingAddress, paymentMethods } = req.body;
 
-  const orderCode = `ORDER-${uuidv4()}`;
+  // 1. Kiểm tra danh sách sách
+  if (!Array.isArray(books) || books.length === 0) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "No books in the order", "Create Guest Order Error");
+  }
 
+  // 2. Kiểm tra thông tin giao hàng
+  const requiredFields = ["fullName", "phone", "addressLine", "city", "state", "zipcode", "country"];
+  for (const field of requiredFields) {
+    if (!shippingAddress || !shippingAddress[field]) {
+      throw new AppError(StatusCodes.BAD_REQUEST, `Field "${field}" is required in shippingAddress`, "Create Guest Order Error");
+    }
+  }
+
+  // 3. Kiểm tra phương thức thanh toán
+  const validPaymentMethods = ["After receive", "PayPal"];
+  const trimmedPaymentMethod = paymentMethods?.trim();
+  if (!trimmedPaymentMethod || !validPaymentMethods.includes(trimmedPaymentMethod)) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "Phương thức thanh toán không hợp lệ", "Create Order Error");
+  }
+
+  // 4. Xử lý danh sách sách
+  const orderedBooks = await Promise.all(
+    books.map(async ({ bookId, quantity }) => {
+      const book = await Book.findById(bookId);
+      if (!book) {
+        throw new AppError(StatusCodes.NOT_FOUND, `Book not found: ${bookId}`, "Create Guest Order Error");
+      }
+
+      const price = book.discountedPrice || book.price;
+      return {
+        bookId,
+        name: book.name,
+        img: book.img,
+        quantity,
+        price,
+        total: (quantity * price).toFixed(2),
+      };
+    })
+  );
+
+  // 5. Tính tổng tiền và phí vận chuyển
+  const totalItemPrice = orderedBooks.reduce((sum, book) => sum + parseFloat(book.total), 0);
+  const shippingFee = 3.0; // Phí vận chuyển cố định
+  const totalAmount = totalItemPrice + shippingFee;
+
+
+  const paymentStatus = trimmedPaymentMethod === "PayPal" ? "Paid" : "Unpaid";
+
+  // 6. Tạo mã đơn hàng
+  const orderCode = `GUEST-${uuidv4()}`;
+
+  // 7. Lưu đơn hàng vào cơ sở dữ liệu
   const newOrder = await Order.create({
     orderCode,
-    books,
+    books: orderedBooks,
     shippingAddress,
-    paymentMethod,
-    status: "Pending",
+    paymentMethods,
+    paymentStatus,
+    status: "Processing",
+    shippingFee,
+    totalAmount,
     isGuestOrder: true,
+    userId: null,
   });
 
+  // 8. Phản hồi
   sendResponse(
     res,
     StatusCodes.CREATED,
     true,
-    newOrder,
+    { ...newOrder.toObject(), orderCode },
     null,
     "Guest order created successfully"
   );
+});
+
+
+orderController.getGuestOrderByCode = catchAsync(async (req, res) => {
+  const { orderCode } = req.params;
+  console.log("Accessing getGuestOrderByCode with orderCode:", orderCode);
+
+  const order = await Order.findOne({ orderCode, isGuestOrder: true })
+    .populate("books.bookId", "name img");
+
+  if (!order) {
+    console.error("Order not found:", orderCode);
+    throw new AppError(StatusCodes.NOT_FOUND, "Order not found", "Get Guest Order Error");
+  }
+
+  sendResponse(res, StatusCodes.OK, true, order, null, "Guest order retrieved successfully");
 });
 
 

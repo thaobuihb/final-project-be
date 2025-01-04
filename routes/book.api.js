@@ -4,19 +4,27 @@ const bookController = require("../controllers/book.controller");
 const authentication = require("../middlewares/authentication");
 const validators = require("../middlewares/validators");
 
+
+// router.get(
+//   "/admin/books",
+//   authentication.loginRequired,
+//   authentication.authorize(["admin"]),
+//   bookController.getAdminBooks
+// );
+
 /**
  * @route POST /books/
  * @description Create a new book
  * @body { name, author, price, publicationDate }
  * @access admin
  */
-router.post(
-  '/',
-  authentication.loginRequired,
-  authentication.authorize(["admin"]),
-  validators.validate(validators.createBookValidator),
-  bookController.createBook
-);
+// router.post(
+//   '/',
+//   authentication.loginRequired,
+//   authentication.authorize(["admin"]),
+//   validators.validate(validators.createBookValidator),
+//   bookController.createBook
+// );
 
 /**
  * @route GET /books
@@ -72,13 +80,13 @@ router.get('/category/:categoryId', bookController.getBooksByCategoryId);
  * @body { name, author, price, publicationDate }
  * @access admin
  */
-router.put(
-  '/:id',
-  authentication.loginRequired,
-  authentication.authorize(["admin"]),
-  validators.validateObjectId("id"),
-  bookController.updateBook
-);
+// router.put(
+//   '/:id',
+//   authentication.loginRequired,
+//   authentication.authorize(["admin"]),
+//   validators.validateObjectId("id"),
+//   bookController.updateBook
+// );
 
 /**
  * @route DELETE /books/:id

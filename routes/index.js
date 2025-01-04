@@ -38,4 +38,8 @@ router.use("/reviews", reviewAPI)
 const wishlistAPI = require("./wishlist.api")
 router.use("/wishlist", wishlistAPI)
 
+//adminAPI
+const adminAPI = require("./admin.api")
+router.use("/admin", adminAPI)
+
 module.exports = router
