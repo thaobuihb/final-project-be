@@ -26,24 +26,35 @@ const bookSchema = new Schema(
     },
     img: {
       type: String,
+      alias: "Img link",
       default: "",
     },
     description: {
       type: String,
       default: "",
     },
-    discountRate: { type: Number, default: 0 },
+    discountRate: { type: Number, default: 0, min: 0 },
     discountedPrice: { type: Number, default: null },
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
-      required: true,
+      required: false,
     },
     categoryName: { 
       type: String,
       required: true,
     },
-
+    Isbn: {
+      type: String,
+      required: true,
+      unique: true, 
+      validate: {
+        validator: function(v) {
+          return /^97[89][0-9]{10}$/.test(v);
+        },
+        message: props => `${props.value} không phải là mã ISBN hợp lệ!`
+      }
+    },
     isDeleted: {
       type: Boolean,
       default: false,

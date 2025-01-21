@@ -8,15 +8,9 @@ const authentication = {};
 // Middleware yêu cầu đăng nhập
 authentication.loginRequired = (req, res, next) => {
   try {
-    
-    // console.log("Request Headers:%%%%%", req.headers);
 
     const tokenString = req.headers.authorization;
-    // console.log("Authorization Header:", tokenString);
-
-    // Bỏ qua kiểm tra đăng nhập cho các route công khai
     if (req.originalUrl.includes("/orders/guest")) {
-      // console.log("Public route accessed, skipping authentication:", req.originalUrl);
       return next();
     }
 
@@ -30,7 +24,6 @@ authentication.loginRequired = (req, res, next) => {
     }
 
     const token = tokenString.replace("Bearer ", "");
-    // console.log("Extracted Token:", token);
 
     jwt.verify(token, JWT_SECRET_KEY, (err, payload) => {
       if (err) {
@@ -54,10 +47,9 @@ authentication.loginRequired = (req, res, next) => {
       
       // console.log("Token Payload:", payload);
 
-      // Gán thông tin người dùng vào request
-      req.role = payload.role;
-      req.userId = payload._id;
-
+      req.user = payload; // Gán toàn bộ payload vào req.user
+  req.userId = payload._id; // Gán lại riêng từng trường
+  req.role = payload.role;
       
       // console.log("UserId from Token:", req.userId);
 
@@ -117,5 +109,8 @@ authentication.guestIdMiddleware = (req, res, next) => {
     return res.status(401).json({ message: "Token không hợp lệ", error });
   }
 };
+
+
+
 
 module.exports = authentication;

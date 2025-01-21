@@ -59,26 +59,16 @@ validators.createBookValidator = [
   
   body('price')
     .notEmpty().withMessage('Price is required')
-    .isFloat({ min: 0 }).withMessage('Price must be a positive number'),
-  
+    .isFloat({ min: 0 }).withMessage('Price must be a positive number')
+    .toFloat(),
+
   body('publicationDate')
     .notEmpty().withMessage('Publication Date is required')
-    .custom((value) => {
-      // Kiểm tra định dạng MM/DD/YYYY bằng regex
-      const dateFormatRegex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/;
-      if (!dateFormatRegex.test(value)) {
-        throw new Error('Invalid publication date format. Use MM/DD/YYYY');
-      }
-
-      // Kiểm tra nếu ngày tồn tại hợp lệ (ví dụ không phải ngày 30/02)
-      if (!moment(value, 'MM/DD/YYYY', true).isValid()) {
-        throw new Error('Invalid date. Please provide a valid MM/DD/YYYY date.');
-      }
-      return true;
-    }),
+    .isISO8601().withMessage('Invalid publication date format. Use YYYY-MM-DD')
+    .toDate(),
   
   body('img')
-    .notEmpty().withMessage('Image URL is required')
+   .optional({ checkFalsy: true })
     .isURL().withMessage('Invalid image URL'),
   
   body('description')
@@ -86,12 +76,14 @@ validators.createBookValidator = [
   
   body('discountRate')
     .optional()
-    .isFloat({ min: 0, max: 100 }).withMessage('Discount rate must be between 0 and 100'),
+    .isFloat({ min: 0, max: 100 }).withMessage('Discount rate must be between 0 and 100')
+    .toFloat(),
   
   body('categoryId')
     .notEmpty().withMessage('Category ID is required')
     .isMongoId().withMessage('Invalid Category ID'),
 ];
+
 
 
 module.exports = validators;

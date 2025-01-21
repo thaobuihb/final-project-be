@@ -7,6 +7,7 @@ const { StatusCodes } = require("http-status-codes");
 
 const bookController = {};
 
+
 // Create book
 bookController.createBook = catchAsync(async (req, res, next) => {
   const {
@@ -18,8 +19,10 @@ bookController.createBook = catchAsync(async (req, res, next) => {
     description,
     categoryId,
     discountRate,
+    rating
   } = req.body;
 
+  // Kiểm tra categoryId
   const category = await Category.findById(categoryId);
   if (!category) {
     throw new AppError(
@@ -29,21 +32,61 @@ bookController.createBook = catchAsync(async (req, res, next) => {
     );
   }
 
+  // Tính giá sau giảm
   let discountedPrice = price;
   if (discountRate && discountRate > 0) {
     discountedPrice = (price - (price * discountRate) / 100).toFixed(2);
   }
 
+  // Sinh ISBN duy nhất
+  const generateUniqueISBN = async () => {
+    let isUnique = false;
+    let generatedISBN;
+
+    while (!isUnique) {
+      generatedISBN = generateISBN();
+      const existingBook = await Book.findOne({ Isbn: generatedISBN });
+      if (!existingBook) {
+        isUnique = true; // ISBN là duy nhất
+      }
+    }
+
+    return generatedISBN;
+  };
+
+  // Hàm sinh ISBN
+  const generateISBN = () => {
+    const prefix = "978"; // Prefix ISBN
+    const randomNumbers = Array.from({ length: 9 }, () =>
+      Math.floor(Math.random() * 10)
+    ).join("");
+
+    const isbnWithoutChecksum = `${prefix}${randomNumbers}`;
+    const checksum = isbnWithoutChecksum
+      .split("")
+      .map((num, idx) => (idx % 2 === 0 ? parseInt(num) : parseInt(num) * 3))
+      .reduce((sum, val) => sum + val, 0);
+
+    const lastDigit = (10 - (checksum % 10)) % 10;
+    return `${isbnWithoutChecksum}${lastDigit}`;
+  };
+
+  const Isbn = await generateUniqueISBN();
+
+  // Tạo sách mới
   const book = await Book.create({
     name,
     author,
     price,
     discountedPrice,
     discountRate: discountRate || 0,
+    rating: rating || 0,
     publicationDate,
     img,
     description,
     category: category._id,
+    categoryName: category.categoryName,
+    Isbn 
   });
 
   sendResponse(
@@ -265,23 +308,42 @@ bookController.getBookWithCategory = catchAsync(async (req, res, next) => {
   sendResponse(res, StatusCodes.OK, true, response, null, "Book and related books retrieved successfully");
 });
 
-// Update a book
 bookController.updateBook = catchAsync(async (req, res, next) => {
-  const bookId = req.params.id;
+  const { id: bookId } = req.params;
   const updateData = req.body;
 
+  // Tìm sách cần cập nhật
+  const book = await Book.findById(bookId);
+  if (!book) {
+    return next(new AppError(StatusCodes.NOT_FOUND, "Book not found", "Update Book Error"));
+  }
+
+  // Validate giá và tỷ lệ giảm giá
+  if (updateData.price !== undefined && updateData.price < 0) {
+    return next(new AppError(StatusCodes.BAD_REQUEST, "Price cannot be negative", "Update Book Error"));
+  }
+
   if (updateData.discountRate !== undefined) {
-    const originalPrice = updateData.price;
+    if (updateData.discountRate < 0 || updateData.discountRate > 100) {
+      return next(new AppError(StatusCodes.BAD_REQUEST, "Invalid discount rate", "Update Book Error"));
+    }
+
+    // Tính toán giá sau giảm giá
+    const originalPrice = updateData.price || book.price;
     const discountRate = updateData.discountRate;
     updateData.discountedPrice = (originalPrice - (originalPrice * discountRate) / 100).toFixed(2);
+  } else {
+    updateData.discountedPrice = updateData.price || book.price;
   }
 
-  const book = await Book.findByIdAndUpdate(bookId, { $set: { isDeleted: false, ...updateData } }, { new: true });
-  if (!book) {
-    throw new AppError(StatusCodes.NOT_FOUND, "Book not found", "Update Book Error");
-  }
+  // Cập nhật thông tin sách
+  const updatedBook = await Book.findByIdAndUpdate(
+    bookId,
+    { $set: { isDeleted: false, ...updateData } },
+    { new: true, runValidators: true }
+  );
 
-  sendResponse(res, StatusCodes.OK, true, book, null, "Book updated successfully");
+  sendResponse(res, StatusCodes.OK, true, updatedBook, null, "Book updated successfully");
 });
 
 // Delete a book

@@ -18,13 +18,13 @@ const validators = require("../middlewares/validators");
  * @body { name, author, price, publicationDate }
  * @access admin
  */
-// router.post(
-//   '/',
-//   authentication.loginRequired,
-//   authentication.authorize(["admin"]),
-//   validators.validate(validators.createBookValidator),
-//   bookController.createBook
-// );
+router.post(
+  '/',
+  authentication.loginRequired,
+  authentication.authorize(["admin"]),
+  validators.validate(validators.createBookValidator),
+  bookController.createBook
+);
 
 /**
  * @route GET /books
@@ -80,13 +80,13 @@ router.get('/category/:categoryId', bookController.getBooksByCategoryId);
  * @body { name, author, price, publicationDate }
  * @access admin
  */
-// router.put(
-//   '/:id',
-//   authentication.loginRequired,
-//   authentication.authorize(["admin"]),
-//   validators.validateObjectId("id"),
-//   bookController.updateBook
-// );
+router.put(
+  '/:id',
+  authentication.loginRequired,
+  authentication.authorize(["admin"]),
+  validators.validateObjectId("id"),
+  bookController.updateBook
+);
 
 /**
  * @route DELETE /books/:id

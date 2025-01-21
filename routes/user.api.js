@@ -18,6 +18,13 @@ router.post(
   userController.register
 );
 
+router.post(
+  "/admin",
+  authentication.loginRequired,
+  authentication.authorize(["admin"]), // Chỉ cho phép Admin
+  userController.addUser
+);
+
 /**
  * @route GET /users?page=1&limit=10
  * @description get all User with pagination

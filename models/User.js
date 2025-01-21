@@ -18,7 +18,7 @@ const userSchema = new Schema(
     houseNumber: { type: String, default: "" }, 
     phone: { type: String, default: "" },
     zipcode: { type: String, default: "" },
-    role: { type: String, enum: ["admin", "customer"], default: "customer" },
+    role: { type: String, enum: ["admin", "manager", "customer"], default: "customer" },
     isDeleted: { type: Boolean, default: false, select: false },
   },
   { timestamps: true, versionKey: false }

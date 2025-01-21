@@ -159,17 +159,19 @@ categoryController.updateCategory = catchAsync(async (req, res, next) => {
 
 categoryController.deleteCategory = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const category = await Category.findOne({ _id: id, isDeleted: false });
 
+  const category = await Category.findOne({ _id: id, isDeleted: false });
   if (!category) {
-    throw new AppError(
-      StatusCodes.NOT_FOUND,
-      "Category not found",
-      "Category Error"
-    );
+    throw new AppError(StatusCodes.NOT_FOUND, "Category not found", "Delete Category Error");
   }
+
   category.isDeleted = true;
   await category.save();
+
+  await Book.updateMany(
+    { category: id },
+    { $unset: { category: "", categoryName: "" } } 
+  );
 
   sendResponse(
     res,
@@ -177,9 +179,10 @@ categoryController.deleteCategory = catchAsync(async (req, res, next) => {
     true,
     null,
     null,
-    "Category deleted successfully"
+    "Category deleted and related books updated successfully"
   );
 });
+
 
 categoryController.getPopularCategories = catchAsync(async (req, res, next) => {
   const popularCategories = await Category.aggregate([

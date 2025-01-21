@@ -31,6 +31,10 @@ const orderSchema = new Schema({
               type: Number,
               required: true,
           },
+          Isbn: {
+            type: String,
+            required: true,
+          },
       },
   ],
   status: {
@@ -43,6 +47,7 @@ const orderSchema = new Schema({
       enum: ["Unpaid", "Paid", "Refunded"],
       default: "Unpaid",
   },
+  
   totalAmount: {
       type: Number,
       required: true,
@@ -57,7 +62,8 @@ const orderSchema = new Schema({
     addressLine: { type: String, required: true },
     city: { type: String, required: true },
     state: { type: String, required: true },
-    zipcode: { type: String, required: true },
+    ward: { type: String, required: true }, 
+    zipcode: { type: String, default: "" }, 
     country: { type: String, default: "Vietnam" },
 },
 
@@ -98,7 +104,7 @@ discount: {
     code: { type: String, default: "" },
     amount: { type: Number, default: 0 },
   },
-}, { timestamps: true, versionKey: false });
+}, { timestamps: true, versionKey: false, strict: true });
 
 orderSchema.methods.toJSON = function () {
   const order = this._doc;

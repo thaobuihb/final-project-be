@@ -32,6 +32,57 @@ userController.register = catchAsync(async (req, res, next) => {
   );
 });
 
+//admin tạo quản lý
+userController.addUser = catchAsync(async (req, res) => {
+  const { name, email, password, role } = req.body;
+
+  // Chỉ Admin có quyền thêm người dùng
+  if (req.user.role !== "admin") {
+    throw new AppError(
+      StatusCodes.FORBIDDEN,
+      "You are not allowed to add users",
+      "Authorization Error"
+    );
+  }
+
+  // Chỉ cho phép thêm role là 'manager'
+  if (role && role !== "manager") {
+    throw new AppError(
+      StatusCodes.FORBIDDEN,
+      "You can only add users with role 'manager'",
+      "Authorization Error"
+    );
+  }
+
+  let user = await User.findOne({ email });
+  if (user) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "User already exists",
+      "Add User Error"
+    );
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  user = await User.create({
+    name,
+    email,
+    password: hashedPassword,
+    role: "manager", 
+  });
+
+  sendResponse(
+    res,
+    StatusCodes.CREATED,
+    true,
+    user,
+    null,
+    "Manager added successfully"
+  );
+});
+
+
 // Lấy tất cả người dùng (ngoại trừ admin)
 userController.getUsers = catchAsync(async (req, res, next) => {
   const users = await User.find({ isDeleted: false, role: { $ne: "admin" } });
@@ -107,15 +158,8 @@ userController.getUserById = catchAsync(async (req, res, next) => {
 userController.updateUser = catchAsync(async (req, res, next) => {
   const currentUserId = req.userId;
   const userId = req.params.id;
-  
-  if (currentUserId !== userId) {
-    throw new AppError(
-      StatusCodes.BAD_REQUEST,
-      "Permission required",
-      "Profile Update error"
-    );
-  }
 
+  // Lấy thông tin người dùng từ cơ sở dữ liệu
   let user = await User.findOne({ _id: userId, isDeleted: false });
 
   if (!user) {
@@ -126,41 +170,37 @@ userController.updateUser = catchAsync(async (req, res, next) => {
     );
   }
 
-  const {
-    name,
-    email,
-    password,
-    gender,
-    birthday,
-    city,
-    state,
-    district,
-    ward,
-    street,
-    houseNumber,
-    phone,
-    zipcode,
-    role,
-  } = req.body;
+  // Kiểm tra xem người dùng hiện tại có quyền admin hay không
+  const currentUser = await User.findById(currentUserId);
 
-  // Cập nhật thông tin người dùng
-  user.name = name || user.name;
-  user.email = email || user.email;
-  user.gender = gender || user.gender;
-  user.birthday = birthday || user.birthday;
-  user.city = city || user.city;
-  user.state = state || user.state;
-  user.district = district || user.district;
-  user.ward = ward || user.ward;
-  user.street = street || user.street;
-  user.houseNumber = houseNumber || user.houseNumber;
-  user.phone = phone || user.phone;
-  user.zipcode = zipcode || user.zipcode;
-  user.role = role || user.role;
+  if (currentUser.role !== "admin" && currentUserId !== userId) {
+    throw new AppError(
+      StatusCodes.FORBIDDEN,
+      "Permission denied",
+      "Update User Error"
+    );
+  }
 
-  if (password) {
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(password, salt);
+  const { role, isDeleted } = req.body;
+
+  // Chỉ admin được thay đổi `role` và `isDeleted`
+  if (currentUser.role === "admin") {
+    if (role && !["admin", "manager", "customer"].includes(role)) {
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        "Invalid role value",
+        "Update User Error"
+      );
+    }
+
+    if (role) user.role = role;
+    if (typeof isDeleted === "boolean") user.isDeleted = isDeleted;
+  } else {
+    throw new AppError(
+      StatusCodes.FORBIDDEN,
+      "Only admins can update role and isDeleted fields",
+      "Update User Error"
+    );
   }
 
   user = await user.save();
@@ -171,7 +211,7 @@ userController.updateUser = catchAsync(async (req, res, next) => {
     true,
     user,
     null,
-    "User profile updated successfully"
+    "User updated successfully"
   );
 });
 
