@@ -6,43 +6,42 @@ const { StatusCodes } = require("http-status-codes");
 
 const categoryController = {};
 
-categoryController.createCategory = catchAsync(async (req, res, next) => {
-  if (Array.isArray(req.body)) {
-    const categoriesData = req.body;
-
-    const createdCategories = [];
-
-    for (const categoryData of categoriesData) {
-      const { categoryName, description } = categoryData;
-
-      const category = await Category.create({ categoryName, description });
-
-      createdCategories.push(category);
-    }
-
-    sendResponse(
-      res,
-      StatusCodes.CREATED,
-      true,
-      createdCategories,
-      null,
-      "Categories created successfully"
-    );
-  } else {
+categoryController.createCategory = async (req, res, next) => {
+  try {
+    console.log("📩 Dữ liệu nhận được từ client:", req.body);
     const { categoryName, description } = req.body;
 
-    const category = await Category.create({ categoryName, description });
+    if (!categoryName || categoryName.trim() === "") {
+      const error = new Error("Tên danh mục không được để trống!");
+      error.statusCode = 400;
+      return next(error); // Đẩy lỗi vào middleware lỗi
+    }
 
-    sendResponse(
-      res,
-      StatusCodes.CREATED,
-      true,
-      category,
-      null,
-      "Category created successfully"
-    );
+    // Kiểm tra trùng lặp danh mục
+    const existingCategory = await Category.findOne({
+      categoryName: { $regex: `^${categoryName.trim()}$`, $options: "i" },
+    });
+
+    if (existingCategory) {
+      console.error("❌ Backend: Danh mục đã tồn tại");
+      return res.status(400).json({ success: false, message: "Tên danh mục đã tồn tại!" });
+    }    
+
+    // Nếu không trùng, thêm danh mục mới
+    const newCategory = new Category({
+      categoryName: categoryName.trim(),
+      description,
+    });
+
+    await newCategory.save();
+    return res.status(201).json({ success: true, data: newCategory });
+  } catch (error) {
+    next(error); // Đảm bảo lỗi được đẩy vào middleware lỗi
   }
-});
+};
+
+
+
 
 categoryController.getAllCategories = catchAsync(async (req, res, next) => {
   const categories = await Category.find({ isDeleted: false });

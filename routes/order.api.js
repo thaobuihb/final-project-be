@@ -6,15 +6,6 @@ const validators = require("../middlewares/validators");
 
 
 
-/**
- * @route POST /orders/guest
- * @description Create an order for guest users
- * @body { books, shippingAddress, paymentMethod }
- * @access Public
- */
-router.post("/guest", orderController.createGuestOrder);
-
-
 
 /**
  * @route GET /orders/guest/:orderCode
@@ -23,7 +14,7 @@ router.post("/guest", orderController.createGuestOrder);
  * @access Public
  */
 router.get("/guest/:orderCode", (req, res, next) => {
-  console.log("Accessing route: /guest/:orderCode");
+  // console.log("Accessing route: /guest/:orderCode");
   next();
 }, orderController.getGuestOrderByCode);
 
@@ -39,84 +30,8 @@ router.get(
   orderController.getPurchaseHistory
 );
 
-
-/**
- * @route PUT /orders/:orderId/payment-status
- * @description Update payment status of an order
- * @body { paymentStatus }
- * @access Admin
- */
-router.put(
-  "/:orderId/payment-status",
-  authentication.loginRequired,
-  authentication.authorize(["admin"]),
-  validators.validateObjectId("orderId"),
-  orderController.updatePaymentStatus
-);
-
-
-/**
- * @route GET /orders/status/:status
- * @description Get all orders by specific status
- * @body none
- * @access Admin
- */
-router.get(
-  "/status/:status",
-  authentication.loginRequired,
-  authentication.authorize(["admin"]),
-  orderController.getOrdersByStatus
-);
-
-
-/**
- * @route GET /orders/track/:orderId
- * @description Track status of an order
- * @body none
- * @access User
- */
-router.get(
-  "/track/:orderId",
-  authentication.loginRequired,
-  validators.validateObjectId("orderId"),
-  orderController.trackOrderStatus
-);
-
-
-/**
- * @route PUT /orders/:orderId/shipping-address
- * @description Update shipping address of an order
- * @body { shippingAddress }
- * @access User
- */
-router.put(
-  "/:orderId/shipping-address",
-  authentication.loginRequired,
-  validators.validateObjectId("orderId"),
-  orderController.updateShippingAddress
-);
-
-
-/**
- * @route POST /orders/:orderId/feedback
- * @description Add feedback for an order
- * @body { feedback }
- * @access User
- */
-router.post(
-  "/:orderId/feedback",
-  authentication.loginRequired,
-  validators.validateObjectId("orderId"),
-  orderController.addOrderFeedback
-);
-
-
-/**
- * @route POST /orders/:id
- * @description Create a order
- * @body { books, shippingAddress, paymentMethods}
- * @access User
- */
+// 🛒 Tạo đơn hàng
+router.post("/guest", orderController.createGuestOrder);
 router.post(
   "/:userId",
   authentication.loginRequired,
@@ -124,51 +39,33 @@ router.post(
   orderController.createOrder
 );
 
-/**
- * @route GET /orders/:userId
- * @description GET all order of a user
- * @body none
- * @access User
- */
+// 📦 Lấy thông tin đơn hàng
+router.get("/find/:orderCode", orderController.getOrderByCode);
 router.get(
-  "/:userId",
+  "/user/:userId",
   authentication.loginRequired,
   validators.validateObjectId("userId"),
   orderController.getOrdersByUserId
 );
-
-/**
- * @route GET /orders/:userId/:orderId
- * @description Get a order of a user
- * @body { status }
- * @access User , amdin
- */
 router.get(
   "/:userId/:orderId",
   authentication.loginRequired,
   validators.validateObjectId("userId", "orderId"),
   orderController.getOrderById
 );
-
-/**
- * @route Put /orders/:id
- * @description Cancer a order
- * @body none
- * @access user
- */
-router.put(
-  "/:userId/:orderId",
+router.get(
+  "/status/:status",
   authentication.loginRequired,
-  validators.validateObjectId("userId", "orderId"),
-  orderController.updateOrderByUser
+  authentication.authorize(["admin"]),
+  orderController.getOrdersByStatus
+);
+router.get(
+  "/track/:orderId",
+  authentication.loginRequired,
+  validators.validateObjectId("orderId"),
+  orderController.trackOrderStatus
 );
 
-/**
- * @route GET /orders/
- * @description GET all order by admin
- * @body none
- * @access admin
- */
 router.get(
   "/",
   authentication.loginRequired,
@@ -176,31 +73,52 @@ router.get(
   orderController.getAllOrders
 );
 
-/**
- * @route  Put/orders/:orderId
- * @description Update Order for Admin
- * @body none
- * @access Admin
- */
+// 🔄 Cập nhật đơn hàng
 router.put(
-  "/:orderId",
+  "/admin/:orderId",
   authentication.loginRequired,
   authentication.authorize(["admin"]),
   validators.validateObjectId("orderId"),
   orderController.updateOrderAD
 );
-
-/**
- * @route DELETE /orders/:orderId
- * @description delete an order by id
- * @body none
- * @access Admin
- */
-router.delete(
+router.put(
   "/:userId/:orderId",
   authentication.loginRequired,
-  authentication.authorize(["admin"]),
   validators.validateObjectId("userId", "orderId"),
+  orderController.updateOrderByUser
+);
+
+router.put("/guest/cancel/:orderCode", orderController.cancelGuestOrder);
+
+
+router.put(
+  "/:orderId/payment-status",
+  authentication.loginRequired,
+  authentication.authorize(["admin"]),
+  validators.validateObjectId("orderId"),
+  orderController.updatePaymentStatus
+);
+router.put(
+  "/:orderId/shipping-address",
+  authentication.loginRequired,
+  validators.validateObjectId("orderId"),
+  orderController.updateShippingAddress
+);
+
+// 📝 Thêm đánh giá đơn hàng
+router.post(
+  "/:orderId/feedback",
+  authentication.loginRequired,
+  validators.validateObjectId("orderId"),
+  orderController.addOrderFeedback
+);
+
+// ❌ Xóa đơn hàng
+router.delete(
+  "/admin/:orderId",
+  authentication.loginRequired,
+  authentication.authorize(["admin"]),
+  validators.validateObjectId("orderId"),
   orderController.deleteOrder
 );
 

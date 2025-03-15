@@ -11,7 +11,8 @@ const deletedBookSchema = new mongoose.Schema(
     discountRate: { type: Number, default: 0 },
     discountedPrice: { type: Number, default: null },
     category: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
-    categoryName: { type: String, required: true }, // Thêm trường này để đồng nhất
+    Isbn: { type: String, required: true },
+    categoryName: { type: String, required: true }, 
     deletedAt: { type: Date, required: true }, 
   },
   { timestamps: true }

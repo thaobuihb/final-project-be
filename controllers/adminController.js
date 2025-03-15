@@ -21,13 +21,13 @@ const updateBookSchema = Joi.object({
   discountRate: Joi.number().min(0).max(100).optional(),
 });
 
-
 // Tổng quan
 adminController.getDashboardData = async (req, res, next) => {
   try {
     const totalBooks = await Book.countDocuments({ isDeleted: false });
     const totalOrders = await Order.countDocuments();
     const totalUsers = await User.countDocuments();
+
     const totalRevenue = await Order.aggregate([
       { $group: { _id: null, total: { $sum: "$totalAmount" } } },
     ]);
@@ -36,7 +36,9 @@ adminController.getDashboardData = async (req, res, next) => {
       totalBooks,
       totalOrders,
       totalUsers,
-      totalRevenue: totalRevenue[0]?.total || 0,
+      totalRevenue: totalRevenue[0]?.total
+        ? parseFloat(totalRevenue[0].total.toFixed(2))
+        : 0,
     };
 
     sendResponse(res, 200, true, response, null, "Dashboard data retrieved");
@@ -52,8 +54,8 @@ adminController.getBooks = catchAsync(async (req, res, next) => {
   const query = { isDeleted: false };
 
   if (search) {
-    query.name = { $regex: search, $options: "i" },
-    { isbn: { $regex: search, $options: "i" } } 
+    (query.name = { $regex: search, $options: "i" }),
+      { isbn: { $regex: search, $options: "i" } };
   }
 
   const books = await Book.aggregate([
@@ -82,39 +84,44 @@ adminController.getBooks = catchAsync(async (req, res, next) => {
   );
 });
 
-//xoá sách
+//xoá mềm sách
 adminController.softDeleteBook = async (req, res, next) => {
   try {
     const { bookId } = req.params;
 
-    // Tìm sách cần xóa
     const book = await Book.findById(bookId);
     if (!book) {
       return res
         .status(404)
-        .json({ success: false, message: "Book not found" });
+        .json({ success: false, message: "Không tìm thấy sách" });
     }
 
-    // Sao chép sách sang collection `deletedBooks` với đầy đủ trường
+    if (!book.Isbn) {
+      return res.status(400).json({
+        success: false,
+        message: "Không thể xóa sách do thiếu mã ISBN",
+      });
+    }
+
     const deletedBookData = {
       ...book.toObject(),
       deletedAt: new Date(),
     };
 
-    // Thêm điều kiện kiểm tra `categoryName` nếu thiếu
     if (!deletedBookData.categoryName) {
       const category = await Category.findById(book.category);
       deletedBookData.categoryName = category
         ? category.name
-        : "Unknown Category";
+        : "Chưa phân loại";
     }
 
     await DeletedBook.create(deletedBookData);
     await Book.findByIdAndDelete(bookId);
 
-    res
-      .status(200)
-      .json({ success: true, message: "Book soft deleted successfully" });
+    res.status(200).json({
+      success: true,
+      message: "Sách đã được xoá mềm thành công",
+    });
   } catch (err) {
     next(err);
   }
@@ -137,31 +144,46 @@ adminController.restoreBook = async (req, res, next) => {
 
     const deletedBook = await DeletedBook.findById(id);
     if (!deletedBook) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Book not found in deleted books" });
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy sách trong danh sách đã xoá",
+      });
     }
 
-    // Kiểm tra và đảm bảo categoryName tồn tại
+    // Kiểm tra nếu `Isbn` bị thiếu
+    if (!deletedBook.Isbn) {
+      return res.status(400).json({
+        success: false,
+        message: "Không thể khôi phục sách do thiếu mã ISBN",
+      });
+    }
+
+    // Kiểm tra nếu sách cùng `Isbn` đã tồn tại trong Book
+    const existingBook = await Book.findOne({ Isbn: deletedBook.Isbn });
+    if (existingBook) {
+      return res.status(400).json({
+        success: false,
+        message: "Không thể khôi phục sách vì đã tồn tại một sách có cùng ISBN",
+      });
+    }
+
     if (!deletedBook.categoryName) {
       const category = await Category.findById(deletedBook.category);
-      deletedBook.categoryName = category ? category.name : "Unknown Category";
+      deletedBook.categoryName = category ? category.name : "Chưa phân loại";
     }
 
-    // Xóa _id để tránh trùng lặp
     const restoredBookData = { ...deletedBook.toObject() };
     delete restoredBookData._id;
 
     const restoredBook = await Book.create(restoredBookData);
+
     await DeletedBook.findByIdAndDelete(id);
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        data: restoredBook,
-        message: "Book restored successfully",
-      });
+    res.status(200).json({
+      success: true,
+      data: restoredBook,
+      message: "Sách đã được khôi phục thành công",
+    });
   } catch (err) {
     next(err);
   }

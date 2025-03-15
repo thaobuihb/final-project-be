@@ -12,7 +12,12 @@ const indexRouter = require('./routes/index');
 const app = express();
 
 
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:3000",
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"],
+  methods: ["GET", "POST", "PUT", "DELETE"]
+}));
 app.use(express.json());  
 app.use(express.urlencoded({ extended: true }));  
 app.use(logger('dev'));
@@ -21,9 +26,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const mongoose = require("mongoose");
 const mongoURI = process.env.MONGODB_URI
-mongoose.connect(mongoURI)
-  .then(() => console.log("DB connected")) 
-  .catch((error) => console.log(error));
+mongoose.connect(mongoURI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 5000, 
+  socketTimeoutMS: 45000, 
+})
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch((error) => {
+    console.error("❌ MongoDB Connection Error:", error.message);
+    process.exit(1); 
+  });
 
 app.use('/api', indexRouter);
 
@@ -37,26 +50,25 @@ app.use((req, res, next) => {
 
 // Global Error Handler
 app.use((err, req, res, next) => {
-    console.log("Error:", err);
-    if (err.isOperational) {
-      return sendResponse(
-        res,
-        err.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
-        false,
-        null,
-        { message: err.message },
-        err.errorType
-      );
-    } else {
-      return sendResponse(
-        res,
-        err.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
-        false,
-        null,
-        { message: err.message },
-        "Internal Server Error"
-      );
-    }
+  console.log("🔥 Middleware lỗi đã nhận lỗi");
+
+  console.error("🔥 Lỗi toàn cục:", err);
+
+  const statusCode = err.statusCode || 500;
+  
+  console.log("🔥 Response sẽ gửi về:", {
+      success: false,
+      message: err.message || "Lỗi không xác định từ máy chủ!",
+  });
+
+  res.setHeader("Content-Type", "application/json");
+  res.status(statusCode).json({
+      success: false,
+      message: err.message || "Lỗi không xác định từ máy chủ!",
+  });
 });
+
+
+
 
 module.exports = app;

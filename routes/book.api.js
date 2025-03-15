@@ -1,9 +1,8 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 const bookController = require("../controllers/book.controller");
 const authentication = require("../middlewares/authentication");
 const validators = require("../middlewares/validators");
-
 
 // router.get(
 //   "/admin/books",
@@ -19,7 +18,7 @@ const validators = require("../middlewares/validators");
  * @access admin
  */
 router.post(
-  '/',
+  "/",
   authentication.loginRequired,
   authentication.authorize(["admin"]),
   validators.validate(validators.createBookValidator),
@@ -32,7 +31,9 @@ router.post(
  * @body none
  * @access Public
  */
-router.get('/', bookController.getAllBooks);
+router.get("/", bookController.getAllBooks);
+
+router.get("/best-seller", bookController.getBestSellerBooks);
 
 /**
  * @route GET /books/new-released
@@ -40,7 +41,7 @@ router.get('/', bookController.getAllBooks);
  * @body none
  * @access Public
  */
-router.get('/new-released', bookController.getNewlyReleasedBooks);
+router.get("/new-released", bookController.getNewlyReleasedBooks);
 
 /**
  * @route GET /books/discounted
@@ -48,7 +49,7 @@ router.get('/new-released', bookController.getNewlyReleasedBooks);
  * @body none
  * @access Public
  */
-router.get('/discounted', bookController.getDiscountedBooks);
+router.get("/discounted", bookController.getDiscountedBooks);
 
 /**
  * @route GET /books/categories
@@ -56,7 +57,7 @@ router.get('/discounted', bookController.getDiscountedBooks);
  * @body none
  * @access Public
  */
-router.get('/categories', bookController.getCategoryOfBooks);
+router.get("/categories", bookController.getCategoryOfBooks);
 
 /**
  * @route GET /books/:id
@@ -64,7 +65,11 @@ router.get('/categories', bookController.getCategoryOfBooks);
  * @body none
  * @access Public
  */
-router.get('/:id', validators.validateObjectId("id"), bookController.getBookById);
+router.get(
+  "/:id",
+  validators.validateObjectId("id"),
+  bookController.getBookById
+);
 
 /**
  * @route GET /books/category/:categoryId
@@ -72,7 +77,7 @@ router.get('/:id', validators.validateObjectId("id"), bookController.getBookById
  * @body none
  * @access Public
  */
-router.get('/category/:categoryId', bookController.getBooksByCategoryId);
+router.get("/category/:categoryId", bookController.getBooksByCategoryId);
 
 /**
  * @route PUT /books/:id
@@ -81,7 +86,7 @@ router.get('/category/:categoryId', bookController.getBooksByCategoryId);
  * @access admin
  */
 router.put(
-  '/:id',
+  "/:id",
   authentication.loginRequired,
   authentication.authorize(["admin"]),
   validators.validateObjectId("id"),
@@ -95,7 +100,7 @@ router.put(
  * @access admin
  */
 router.delete(
-  '/:id',
+  "/:id",
   authentication.loginRequired,
   authentication.authorize(["admin"]),
   validators.validateObjectId("id"),
@@ -108,7 +113,7 @@ router.delete(
  * @body { bookIds: [Array of book IDs] }
  * @access Public
  */
-router.post('/wishlist', bookController.getBooksByIds);
+router.post("/wishlist", bookController.getBooksByIds);
 
 /**
  * @route POST /books/carts
@@ -116,7 +121,7 @@ router.post('/wishlist', bookController.getBooksByIds);
  * @body { bookIds: [Array of book IDs] }
  * @access Public
  */
-router.post('/carts', bookController.getBooksByCartIds);
+router.post("/carts", bookController.getBooksByCartIds);
 
 /**
  * @route GET /books/:bookId/with-category
@@ -125,7 +130,7 @@ router.post('/carts', bookController.getBooksByCartIds);
  * @access Public
  */
 router.get(
-  '/:bookId/with-category',
+  "/:bookId/with-category",
   validators.validateObjectId("bookId"),
   bookController.getBookWithCategory
 );

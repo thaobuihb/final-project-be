@@ -39,13 +39,15 @@ const orderSchema = new Schema({
   ],
   status: {
       type: String,
-      enum: ["Processing", "Shipped", "Delivered", "Returned", "Cancelled"],
-      default: "Processing",
+      enum: ["Đang xử lý", "Đã giao hàng", "Đã nhận hàng", "Trả hàng", "Đã hủy"],
+      default: "Đang xử lý",
   },
   paymentStatus: {
       type: String,
-      enum: ["Unpaid", "Paid", "Refunded"],
-      default: "Unpaid",
+      enum: ["Chưa thanh toán"
+      , "Đã thanh toán", "Đã hoàn tiền"],
+      default: "Chưa thanh toán"
+      ,
   },
   
   totalAmount: {

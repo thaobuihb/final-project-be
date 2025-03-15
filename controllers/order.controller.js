@@ -8,7 +8,7 @@ const { v4: uuidv4 } = require("uuid");
 
 const orderController = {};
 
-// Tạo đơn hàng
+// Tạo đơn hàng khách đăng nhập
 orderController.createOrder = catchAsync(async (req, res) => {
   const { userId } = req.params;
   const { books, shippingAddress, paymentMethods } = req.body;
@@ -98,13 +98,12 @@ orderController.createOrder = catchAsync(async (req, res) => {
     (sum, item) => sum + parseFloat(item.total),
     0
   );
-  const shippingFee = 3.0; // Phí vận chuyển cố định
+  const shippingFee = 3.0; 
   const calculatedTotalAmount = totalItemPrice + shippingFee;
 
-  // 7. Xác định trạng thái thanh toán
-  const paymentStatus = trimmedPaymentMethod === "PayPal" ? "Paid" : "Unpaid";
+  
+  const paymentStatus = trimmedPaymentMethod === "PayPal" ? "Đã thanh toán" : "Chưa thanh toán";
 
-  // 8. Cập nhật lịch sử mua hàng trong giỏ hàng
   const cart = await Cart.findOne({ userId });
   if (cart) {
     cart.purchaseHistory = [
@@ -120,10 +119,8 @@ orderController.createOrder = catchAsync(async (req, res) => {
     await cart.save();
   }
 
-  // 9. Tạo mã đơn hàng
   const orderCode = `ORDER-${uuidv4()}`;
 
-  // 10. Lưu đơn hàng vào cơ sở dữ liệu
   const order = await Order.create({
     orderCode,
     userId,
@@ -133,19 +130,10 @@ orderController.createOrder = catchAsync(async (req, res) => {
     paymentStatus,
     totalAmount: calculatedTotalAmount,
     shippingFee,
-    status: "Processing",
+    status: "Đang xử lý",
     isGuestOrder: null,
   });
 
-  // // 11. Xóa sách đã mua khỏi giỏ hàng
-  // if (cart) {
-  //   cart.books = cart.books.filter(
-  //     (cartItem) => !orderedBooks.find((book) => book.bookId.toString() === cartItem.bookId.toString())
-  //   );
-  //   await cart.save();
-  // }
-
-  // 12. Phản hồi
   sendResponse(
     res,
     StatusCodes.CREATED,
@@ -177,7 +165,6 @@ orderController.getOrderById = catchAsync(async (req, res) => {
   console.log("UserId nhận được trong getOrderById:", userId);
   console.log("OrderId nhận được trong getOrderById:", orderId);
 
-  // Tìm đơn hàng và populate thông tin sách từ collection Book
   const order = await Order.findOne({
     userId,
     _id: orderId,
@@ -198,7 +185,6 @@ orderController.getOrderById = catchAsync(async (req, res) => {
     );
   }
 
-  // Ánh xạ thông tin để đảm bảo sách bao gồm dữ liệu cần thiết
   const populatedOrder = {
     ...order.toObject(),
     books: order.books.map((book) => ({
@@ -211,8 +197,6 @@ orderController.getOrderById = catchAsync(async (req, res) => {
       Isbn: book.Isbn || book.bookId?.Isbn || "N/A",
     })),
   };
-
-  // console.log("Chi tiết đơn hàng sau khi xử lý:$$$$$", populatedOrder);
 
   sendResponse(
     res,
@@ -239,15 +223,20 @@ orderController.updateOrderByUser = catchAsync(async (req, res) => {
     );
   }
 
-  if (order.status !== "Processing") {
+  if (!["Đang xử lý", "Đã giao hàng"].includes(order.status)) {
     throw new AppError(
       StatusCodes.BAD_REQUEST,
-      "Only orders in 'Processing' status can be updated",
+      "Only orders in 'Đang xử lý' or 'Đã giao hàng' status can be cancelled",
       "Update Order Error"
     );
   }
 
-  order.status = status === "Cancelled" ? "Cancelled" : order.status;
+  order.status = "Đã hủy";
+
+  if (order.paymentStatus === "Đã thanh toán") {
+    order.paymentStatus = "Đã hoàn tiền";
+  }
+
   await order.save();
 
   sendResponse(
@@ -256,9 +245,10 @@ orderController.updateOrderByUser = catchAsync(async (req, res) => {
     true,
     order,
     null,
-    "Order updated successfully"
+    "Order cancelled successfully"
   );
 });
+
 
 orderController.getAllOrders = catchAsync(async (req, res) => {
   const { search, searchCriteria } = req.query;
@@ -285,32 +275,72 @@ orderController.getAllOrders = catchAsync(async (req, res) => {
 });
 
 orderController.updateOrderAD = catchAsync(async (req, res) => {
-  const { status } = req.body; // Trạng thái cần cập nhật
+  const { status } = req.body;
+  const orderId = req.params.orderId;
+
   const order = await Order.findOne({
-    _id: req.params.orderId,
+    _id: orderId,
     isDeleted: false,
   });
 
-  if (!order)
+  if (!order) {
     throw new AppError(
       StatusCodes.NOT_FOUND,
-      "Order not found",
-      "Update Order Error"
-    );
-
-  if (
-    status === "Cancelled" &&
-    !["Processing", "Shipped"].includes(order.status)
-  ) {
-    throw new AppError(
-      StatusCodes.BAD_REQUEST,
-      "Only orders in 'Processing' or 'Shipped' status can be cancelled",
-      "Update Order Error"
+      "Không tìm thấy đơn hàng",
+      "Lỗi cập nhật đơn hàng"
     );
   }
 
-  order.status = status;
+  const currentStatus = order.status.trim();
+  const newStatus = status.trim();
+
+  console.log(`🚀 Cập nhật trạng thái đơn hàng từ: '${currentStatus}' → '${newStatus}'`);
+
+  if (currentStatus === newStatus) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      `Trạng thái đã là '${newStatus}', không cần cập nhật`,
+      "Lỗi cập nhật đơn hàng"
+    );
+  }
+
+  const validTransitions = {
+    "Đang xử lý": ["Đã giao hàng", "Đã nhận hàng", "Đã hủy"],
+    "Đã giao hàng": ["Đã nhận hàng", "Trả hàng", "Đã hủy"],
+    "Đã nhận hàng": ["Trả hàng", "Đã hủy"],
+    "Trả hàng": [],
+    "Đã hủy": []
+  };
+
+  if (!validTransitions[currentStatus]) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      `Trạng thái hiện tại '${currentStatus}' không hợp lệ`,
+      "Lỗi cập nhật đơn hàng"
+    );
+  }
+
+  if (!validTransitions[currentStatus].includes(newStatus)) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      `Không thể cập nhật trạng thái từ '${currentStatus}' sang '${newStatus}'`,
+      "Lỗi cập nhật đơn hàng"
+    );
+  }
+
+  if (status === "Đã hủy" && order.paymentStatus === "Đã thanh toán") {
+    console.log(`🔄 Đơn hàng bị hủy - tự động hoàn tiền từ '${order.paymentStatus}' → 'Đã hoàn tiền'`);
+    order.paymentStatus = "Đã hoàn tiền";
+  }
+
+  order.status = newStatus;
+  if (newStatus === "Trả hàng" && order.paymentStatus === "Đã thanh toán") {
+    console.log("🔄 Đơn hàng đã được trả hàng, tự động chuyển trạng thái thanh toán thành 'Đã hoàn tiền'");
+    order.paymentStatus = "Đã hoàn tiền";
+  }
   await order.save();
+
+  console.log("✅ Cập nhật trạng thái thành công!");
 
   sendResponse(
     res,
@@ -318,9 +348,10 @@ orderController.updateOrderAD = catchAsync(async (req, res) => {
     true,
     order,
     null,
-    "Order status updated successfully"
+    "Cập nhật trạng thái đơn hàng thành công"
   );
 });
+
 
 orderController.deleteOrder = catchAsync(async (req, res) => {
   const order = await Order.findOneAndUpdate(
@@ -355,21 +386,38 @@ orderController.updatePaymentStatus = catchAsync(async (req, res) => {
   if (!order) {
     throw new AppError(
       StatusCodes.NOT_FOUND,
-      "Order not found",
-      "Update Payment Status Error"
+      "Không tìm thấy đơn hàng",
+      "Lỗi cập nhật trạng thái thanh toán"
     );
   }
 
-  if (order.status === "Cancelled") {
-    throw new AppError(
-      StatusCodes.BAD_REQUEST,
-      "Cannot update payment status for a cancelled order",
-      "Update Payment Status Error"
-    );
+  const currentPaymentStatus = order.paymentStatus.trim();
+  const newPaymentStatus = paymentStatus.trim();
+
+
+  const validTransitions = {
+    "Chưa thanh toán": ["Đã thanh toán"], 
+    "Đã thanh toán": ["Đã hoàn tiền"], 
+    "Đã hoàn tiền": [] 
+  };
+
+  const shouldAutoRefund = ["Trả hàng", "Đã hủy"].includes(order.status) && currentPaymentStatus === "Đã thanh toán";
+
+  if (shouldAutoRefund) {
+    order.paymentStatus = "Đã hoàn tiền";
+  } else {
+    if (!validTransitions[currentPaymentStatus].includes(newPaymentStatus)) {
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        `Không thể cập nhật trạng thái thanh toán từ '${currentPaymentStatus}' sang '${newPaymentStatus}'`,
+        "Lỗi cập nhật trạng thái thanh toán"
+      );
+    }
+    order.paymentStatus = newPaymentStatus;
   }
 
-  order.paymentStatus = paymentStatus;
   await order.save();
+  console.log("✅ Cập nhật trạng thái thanh toán thành công!");
 
   sendResponse(
     res,
@@ -377,7 +425,7 @@ orderController.updatePaymentStatus = catchAsync(async (req, res) => {
     true,
     order,
     null,
-    "Payment status updated successfully"
+    "Cập nhật trạng thái thanh toán thành công"
   );
 });
 
@@ -420,76 +468,69 @@ orderController.trackOrderStatus = catchAsync(async (req, res) => {
 });
 
 orderController.updateShippingAddress = catchAsync(async (req, res) => {
-  // Log thông tin từ request
-  console.log("Request Params - orderId:", req.params.orderId);
-  console.log("Request Body - shippingAddress:", req.body.shippingAddress);
-  console.log("Logged-in User ID:", req.userId);
-  console.log("Logged-in User Role:", req.role);
-
   const { userId, orderId } = req.params;
   const { shippingAddress } = req.body;
   let order;
 
   if (req.user.role === "customer") {
-    // Khách hàng chỉ được cập nhật địa chỉ của đơn hàng thuộc về họ
     order = await Order.findOne({
       _id: orderId,
-      userId: req.user._id, // Kiểm tra userId là của họ
-      status: "Processing", // Chỉ cho phép khi đơn hàng đang xử lý
+      userId: req.user._id, 
+      status: "Đang xử lý", 
       isDeleted: false,
     });
   } else if (req.user.role === "admin") {
-    // Admin có thể cập nhật bất kỳ đơn hàng nào
     order = await Order.findOne({
       _id: orderId,
-      status: "Processing", // Đơn hàng đang xử lý
+      status: "Đang xử lý", 
       isDeleted: false,
     });
   }
 
   if (!order) {
-    console.error("Order not found or not eligible for address change", {
+    console.error("❌ Order not found or not eligible for address change", {
       orderId,
       userId: req.user.role === "customer" ? req.userId : "N/A",
     });
     throw new AppError(
       StatusCodes.NOT_FOUND,
-      "Order not found or not eligible for address change",
-      "Update Shipping Address Error"
+      "Không tìm thấy đơn hàng hoặc không thể thay đổi địa chỉ",
+      "Lỗi cập nhật địa chỉ giao hàng"
     );
   }
 
-  // Kiểm tra các trường bắt buộc
   const requiredFields = [
     "fullName",
     "phone",
     "addressLine",
     "city",
     "state",
-    "zipcode",
     "country",
   ];
   for (const field of requiredFields) {
-    if (!shippingAddress[field]) {
+    if (!shippingAddress[field]?.trim()) {
       console.error(
-        "Missing field:",
+        "❌ Thiếu trường:",
         field,
-        "in shipping address:",
+        "trong địa chỉ giao hàng:",
         shippingAddress
       );
       throw new AppError(
         StatusCodes.BAD_REQUEST,
-        `Missing field ${field} in shipping address`,
-        "Update Shipping Address Error"
+        `Thiếu trường ${field} trong địa chỉ giao hàng`,
+        "Lỗi cập nhật địa chỉ giao hàng"
       );
     }
   }
 
-  // Cập nhật địa chỉ giao hàng
+  if (!shippingAddress.zipcode) {
+    shippingAddress.zipcode = "";
+  }
+
   order.shippingAddress = shippingAddress;
   await order.save();
 
-  console.log("Updated Order - shippingAddress:", order.shippingAddress);
+  // console.log("✅ Đã cập nhật địa chỉ giao hàng:", order.shippingAddress);
 
   sendResponse(
     res,
@@ -497,9 +538,10 @@ orderController.updateShippingAddress = catchAsync(async (req, res) => {
     true,
     order,
     null,
-    "Shipping address updated successfully"
+    "Cập nhật địa chỉ giao hàng thành công"
   );
 });
+
 
 orderController.addOrderFeedback = catchAsync(async (req, res) => {
   const { feedback } = req.body;
@@ -507,7 +549,7 @@ orderController.addOrderFeedback = catchAsync(async (req, res) => {
     {
       _id: req.params.orderId,
       userId: req.user.id,
-      status: "Delivered",
+      status: "Đã nhận hàng",
       isDeleted: false,
     },
     { feedback },
@@ -531,6 +573,7 @@ orderController.addOrderFeedback = catchAsync(async (req, res) => {
   );
 });
 
+//tạo đơn hàng khách không đăng nhập
 orderController.createGuestOrder = catchAsync(async (req, res) => {
   const { books, shippingAddress, paymentMethods } = req.body;
 
@@ -550,7 +593,7 @@ orderController.createGuestOrder = catchAsync(async (req, res) => {
     "addressLine",
     "city",
     "state",
-    "zipcode",
+    // "zipcode",
     "country",
   ];
   for (const field of requiredFields) {
@@ -594,6 +637,7 @@ orderController.createGuestOrder = catchAsync(async (req, res) => {
         bookId,
         name: book.name,
         img: book.img,
+        Isbn: book.Isbn,
         quantity,
         price,
         total: (quantity * price).toFixed(2),
@@ -609,7 +653,7 @@ orderController.createGuestOrder = catchAsync(async (req, res) => {
   const shippingFee = 3.0; // Phí vận chuyển cố định
   const totalAmount = totalItemPrice + shippingFee;
 
-  const paymentStatus = trimmedPaymentMethod === "PayPal" ? "Paid" : "Unpaid";
+  const paymentStatus = trimmedPaymentMethod === "PayPal" ? "Đã thanh toán" : "Chưa thanh toán";
 
   // 6. Tạo mã đơn hàng
   const orderCode = `GUEST-${uuidv4()}`;
@@ -621,12 +665,14 @@ orderController.createGuestOrder = catchAsync(async (req, res) => {
     shippingAddress,
     paymentMethods,
     paymentStatus,
-    status: "Processing",
+    status: "Đang xử lý",
     shippingFee,
     totalAmount,
     isGuestOrder: true,
     userId: null,
   });
+  console.log("📦 Đơn hàng khách vãng lai:", newOrder);
+
 
   // 8. Phản hồi
   sendResponse(
@@ -639,33 +685,69 @@ orderController.createGuestOrder = catchAsync(async (req, res) => {
   );
 });
 
-orderController.getGuestOrderByCode = catchAsync(async (req, res) => {
-  const { orderCode } = req.params;
-  console.log("Accessing getGuestOrderByCode with orderCode:", orderCode);
+orderController.getOrderByCode = catchAsync(async (req, res) => {
+  const { orderCode } = req.params; 
 
-  const order = await Order.findOne({ orderCode, isGuestOrder: true }).populate(
-    "books.bookId",
-    "name img"
-  );
-
-  if (!order) {
-    console.error("Order not found:", orderCode);
-    throw new AppError(
-      StatusCodes.NOT_FOUND,
-      "Order not found",
-      "Get Guest Order Error"
-    );
+  if (!orderCode) {
+    return res.status(400).json({
+      success: false,
+      message: "Order code is required",
+    });
   }
 
-  sendResponse(
-    res,
-    StatusCodes.OK,
-    true,
-    order,
-    null,
-    "Guest order retrieved successfully"
-  );
+  console.log("🔍 Đang tìm đơn hàng với mã:", orderCode);
+
+  try {
+    const order = await Order.findOne({ orderCode }).populate(
+      "books.bookId",
+      "name img price"
+    );
+
+    if (!order) {
+      console.error("❌ Không tìm thấy đơn hàng:", orderCode);
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: order,
+      message: "Order retrieved successfully",
+    });
+  } catch (error) {
+    console.error("🔥 Lỗi khi tìm đơn hàng:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
 });
+
+
+//lấy đơn hàng cho khách không đăng nhập
+orderController.getGuestOrderByCode = async (req, res) => {
+  try {
+      const { orderCode } = req.params;
+
+      const order = await Order.findOne({ orderCode, isGuestOrder: true })
+      .populate({
+          path: "books.bookId",
+          model: "Book", 
+          select: "name img price", 
+      });
+
+      if (!order) {
+          return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+      }
+
+      return res.status(200).json(order);
+  } catch (error) {
+      console.error("Error fetching guest order:", error);
+      return res.status(500).json({ message: "Lỗi server" });
+  }
+};
 
 // Lấy lịch sử mua hàng
 orderController.getPurchaseHistory = catchAsync(async (req, res) => {
@@ -702,5 +784,46 @@ orderController.getPurchaseHistory = catchAsync(async (req, res) => {
     "Purchase history retrieved successfully"
   );
 });
+
+
+orderController.cancelGuestOrder = catchAsync(async (req, res) => {
+  const { orderCode } = req.params;
+
+  // 1. Kiểm tra đơn hàng có tồn tại không
+  const order = await Order.findOne({ orderCode, isGuestOrder: true });
+
+  if (!order) {
+    throw new AppError(
+      StatusCodes.NOT_FOUND,
+      "Không tìm thấy đơn hàng dành cho khách chưa đăng nhập",
+      "Cancel Guest Order Error"
+    );
+  }
+
+  // 2. Kiểm tra trạng thái đơn hàng, chỉ cho phép hủy khi đang xử lý
+  if (order.status !== "Đang xử lý") {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "Chỉ có thể hủy đơn hàng khi đang trong trạng thái 'Đang xử lý'",
+      "Cancel Guest Order Error"
+    );
+  }
+
+  // 3. Cập nhật trạng thái đơn hàng thành "Đã hủy"
+  order.status = "Đã hủy";
+  order.updatedAt = new Date();
+  await order.save();
+
+  // 4. Trả về kết quả
+  sendResponse(
+    res,
+    StatusCodes.OK,
+    true,
+    order,
+    null,
+    "Đơn hàng đã được hủy thành công"
+  );
+});
+
 
 module.exports = orderController;
