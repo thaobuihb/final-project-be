@@ -6,33 +6,64 @@ const { StatusCodes } = require("http-status-codes");
 const userController = {};
 
 // Đăng ký người dùng mới
-userController.register = catchAsync(async (req, res, next) => {
-  let { name, email, password } = req.body;
+const Joi = require("joi");
 
-  let user = await User.findOne({ email });
-  if (user)
-    throw new AppError(
+userController.register = catchAsync(async (req, res, next) => {
+  const schema = Joi.object({
+    name: Joi.string().min(2).max(50).required(),
+    email: Joi.string().email().max(100).required(),
+    password: Joi.string().min(8).max(100).required(),
+  });
+
+  const { error } = schema.validate(req.body);
+  if (error) {
+    return sendResponse(
+      res,
       StatusCodes.BAD_REQUEST,
+      false,
+      null,
+      error.details[0].message,
+      "Validation Error"
+    );
+  }
+
+  let { name, email, password } = req.body;
+  email = email.toLowerCase().trim(); 
+
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    return sendResponse(
+      res,
+      StatusCodes.BAD_REQUEST,
+      false,
+      null,
       "User already exists",
       "Registration Error"
     );
+  }
 
   const salt = await bcrypt.genSalt(10);
-  password = await bcrypt.hash(password, salt);
-  user = await User.create({ name, email, password });
+  const hashedPassword = await bcrypt.hash(password, salt);
+
+  
+  const user = await User.create({ name, email, password: hashedPassword });
+
   const accessToken = await user.generateToken();
 
-  sendResponse(
+  const userResponse = user.toObject();
+  delete userResponse.password;
+
+  return sendResponse(
     res,
-    StatusCodes.OK,
+    StatusCodes.CREATED,
     true,
-    { user, accessToken },
+    { user: userResponse, accessToken },
     null,
-    "User created successfully"
+    "Tạo tài khoản thành công"
   );
 });
 
-//admin tạo quản lý
+
 userController.addUser = catchAsync(async (req, res) => {
   const { name, email, password, role } = req.body;
 
@@ -54,22 +85,42 @@ userController.addUser = catchAsync(async (req, res) => {
     );
   }
 
+  // ✅ Kiểm tra email hợp lệ bằng regex
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || !emailRegex.test(email)) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "Email không hợp lệ",
+      "Lỗi thêm người dùng"
+    );
+  }
+
+  // ✅ Kiểm tra mật khẩu hợp lệ
+  if (!password || password.length < 8) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "Mật khẩu phải có ít nhất 8 ký tự",
+      "Lỗi thêm người dùng"
+    );
+  }
+
   let user = await User.findOne({ email });
   if (user) {
     throw new AppError(
       StatusCodes.BAD_REQUEST,
-      "User already exists",
-      "Add User Error"
+      "Người dùng đã tồn tại",
+      "Lỗi thêm người dùng"
     );
   }
 
+  // ✅ Hash password trước khi lưu
   const hashedPassword = await bcrypt.hash(password, 10);
 
   user = await User.create({
     name,
     email,
     password: hashedPassword,
-    role: "manager", 
+    role: "manager",
   });
 
   sendResponse(
@@ -78,10 +129,9 @@ userController.addUser = catchAsync(async (req, res) => {
     true,
     user,
     null,
-    "Manager added successfully"
+    "Thêm quản lý thành công"
   );
 });
-
 
 // Lấy tất cả người dùng (ngoại trừ admin)
 userController.getUsers = catchAsync(async (req, res, next) => {
@@ -159,7 +209,6 @@ userController.updateUser = catchAsync(async (req, res, next) => {
   const currentUserId = req.userId;
   const userId = req.params.id;
 
-  // Lấy thông tin người dùng từ cơ sở dữ liệu
   let user = await User.findOne({ _id: userId, isDeleted: false });
 
   if (!user) {
@@ -170,7 +219,6 @@ userController.updateUser = catchAsync(async (req, res, next) => {
     );
   }
 
-  // Kiểm tra xem người dùng hiện tại có quyền admin hay không
   const currentUser = await User.findById(currentUserId);
 
   if (currentUser.role !== "admin" && currentUserId !== userId) {
@@ -219,7 +267,11 @@ userController.updateUser = catchAsync(async (req, res, next) => {
 userController.deleteUser = catchAsync(async (req, res, next) => {
   const userId = req.params.id;
 
-  const user = await User.findOne({ _id: userId, isDeleted: false });
+  const user = await User.findOne(
+    { _id: userId, isDeleted: false },
+    { isDeleted: true },
+    { new: true, runValidators: false, strict: false }
+  );
 
   if (!user) {
     throw new AppError(

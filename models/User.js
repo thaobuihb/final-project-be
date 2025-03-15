@@ -6,8 +6,20 @@ const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
 const userSchema = new Schema(
   {
     name: { type: String },
-    email: { type: String, required: true, minlength: 3, maxlength: 200, unique: true },
-    password: { type: String, required: true, minlength: 3, maxlength: 100 },
+    email: { 
+      type: String, 
+      required: true, 
+      unique: true, 
+      trim: true,
+      maxlength: 100,
+      match: [/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, 'Email không hợp lệ']
+  },
+  password: { 
+      type: String, 
+      required: true, 
+      minlength: 8, 
+      maxlength: 100,
+  },
     gender: { type: String, default: "" },
     birthday: { type: String, default: "" },
     city: { type: String, default: "" },
