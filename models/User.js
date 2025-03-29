@@ -6,31 +6,41 @@ const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
 const userSchema = new Schema(
   {
     name: { type: String },
-    email: { 
-      type: String, 
-      required: true, 
-      unique: true, 
+    email: {
+      type: String,
+      required: true,
+      unique: true,
       trim: true,
       maxlength: 100,
-      match: [/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, 'Email không hợp lệ']
-  },
-  password: { 
-      type: String, 
-      required: true, 
-      minlength: 8, 
+      match: [
+        /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+        "Email không hợp lệ",
+      ],
+    },
+    password: {
+      type: String,
+      required: true,
+      minlength: 8,
       maxlength: 100,
-  },
+    },
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
+    oldPasswords: [{ type: String, select: false }],
     gender: { type: String, default: "" },
     birthday: { type: String, default: "" },
     city: { type: String, default: "" },
     state: { type: String, default: "" },
-    district: { type: String, default: "" }, 
-    ward: { type: String, default: "" }, 
-    street: { type: String, default: "" }, 
-    houseNumber: { type: String, default: "" }, 
+    district: { type: String, default: "" },
+    ward: { type: String, default: "" },
+    street: { type: String, default: "" },
+    houseNumber: { type: String, default: "" },
     phone: { type: String, default: "" },
     zipcode: { type: String, default: "" },
-    role: { type: String, enum: ["admin", "manager", "customer"], default: "customer" },
+    role: {
+      type: String,
+      enum: ["admin", "manager", "customer"],
+      default: "customer",
+    },
     isDeleted: { type: Boolean, default: false, select: false },
   },
   { timestamps: true, versionKey: false }

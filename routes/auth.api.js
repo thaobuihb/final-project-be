@@ -27,5 +27,42 @@ validators.validate([
       .withMessage("Wrong password"),
   ]),
 authController.loginWithEmail)
+/**
+ * @route POST /forgot-password
+ * @description Send password reset link
+ * @body {email}
+ * @access Public
+ */
+router.post(
+  "/forgot-password",
+  validators.validate([
+    body("email")
+      .exists()
+      .isEmail()
+      .withMessage("Invalid email address")
+      .normalizeEmail({ gmail_remove_dots: false }),
+  ]),
+  authController.forgotPassword
+);
+
+/**
+ * @route POST /reset-password
+ * @description Reset user password
+ * @body {token, password}
+ * @access Public
+ */
+router.post(
+  "/reset-password",
+  validators.validate([
+    body("token").exists().withMessage("Token is required"),
+    body("password")
+      .exists()
+      .notEmpty()
+      .withMessage("Password is required")
+      .isLength({ min: 6 })
+      .withMessage("Password must be at least 6 characters"),
+  ]),
+  authController.resetPassword
+);
 
 module.exports = router
