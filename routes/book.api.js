@@ -4,12 +4,6 @@ const bookController = require("../controllers/book.controller");
 const authentication = require("../middlewares/authentication");
 const validators = require("../middlewares/validators");
 
-// router.get(
-//   "/admin/books",
-//   authentication.loginRequired,
-//   authentication.authorize(["admin"]),
-//   bookController.getAdminBooks
-// );
 
 /**
  * @route POST /books/

@@ -20,22 +20,6 @@ router.get(
   adminController.getBooks
 );
 
-// Route tạo sách
-// router.post(
-//   "/books",
-//   authentication.loginRequired,
-//   authentication.authorize(["admin"]),
-//   adminController.createBook
-// );
-
-// Route cập nhật sách
-// router.put(
-//   "/books/:bookId",
-//   authentication.loginRequired,
-//   authentication.authorize(["admin"]),
-//   adminController.updateBook
-// );
-
 // Route xoá sách tạm thời (soft delete)
 router.delete(
   "/books/:bookId",

@@ -5,8 +5,6 @@ const authentication = require("../middlewares/authentication");
 const validators = require("../middlewares/validators");
 
 
-
-
 /**
  * @route GET /orders/guest/:orderCode
  * @description Get guest order details by order code

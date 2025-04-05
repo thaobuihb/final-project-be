@@ -71,16 +71,6 @@ router.delete(
   cartController.removeBookFromCart
 );
 
-/**
- * @route GET /carts/:userId
- * @description Get cart by userId
- * @access User
- */
-// router.get(
-//   "/:userId",
-//   authentication.loginRequired,
-//   cartController.getCartByUserId
-// );
 
 
 module.exports = router;

@@ -28,17 +28,19 @@ Tính năng hy vọng sẽ phát triển trong tương lai là cho phép ngườ
 - Là người dùng, tôi có thể đăng nhập bằng email và mật khẩu của mình.
 - Với tư cách là người dùng, tôi có thể đăng ký tài khoản mới bằng email và mật khẩu.
 - Là người dùng, tôi có thể duy trì trạng thái đăng nhập sau khi làm mới trang.
+- Ngườ dùng có thể đặt lại mật khẩu nếu bị quên
 
 ## User
 
 - Là quản trị viên, tôi có thể lấy được tất cả người dùng đã đăng ký trên hệ thống.
 - Với tư cách là quản trị viên, tôi có thể xóa một người dùng.
+- Với tư cách là quản trị viên tôi có thể thêm quản lý, thay đổi vai trò của người dùng thành quản và ngược laị
 - Là người dùng, tôi có thể xem hồ sơ của mình.
 - Là người dùng, tôi có thể cập nhật hồ sơ của mình.
 
 ## Book
 
-- Là quản trị viên, tôi có thể tạo một cuốn sách mới bao gồm việc nhập tiêu đề, tác giả, nhà xuất bản, mô tả và giá cả.
+- Là quản trị viên, tôi có thể tạo một cuốn sách mới bao gồm việc nhập tiêu đề, tác giả, mô tả và giá cả, danh mục.
 - Là quản trị viên, tôi có thể cập nhật một cuốn sách.
 - Là quản trị viên, tôi có thể xóa một cuốn sách.
 - Là người dùng hoặc quản trị viên, tôi có thể xem danh sách tất cả sách có sẵn trên cửa hàng.
@@ -51,13 +53,6 @@ Tính năng hy vọng sẽ phát triển trong tương lai là cho phép ngườ
 - Là quản trị viên, tôi có thể tạo một danh mục sách mới để phân loại sách theo các thể loại mới.
 - Là quản trị viên, tôi có thể cập nhật một danh mục.
 - Là quản trị viên, tôi có thể xóa một danh mục.
-
-## Review
-
-- Là người dùng, tôi có thể tạo nhận xét về một cuốn sách.
-- Là người dùng, tôi có thể xem các bình luận về cuốn sách mà không cần đăng nhập.
-- Là người dùng, tôi có thể chỉnh sửa các nhận xét của mình để cập nhật ý kiến hoặc thông tin mới.
-- Là người dùng, tôi có thể xóa nhận xét của mình.
 
 ## Cart
 
@@ -74,6 +69,7 @@ Tính năng hy vọng sẽ phát triển trong tương lai là cho phép ngườ
 - Là người dùng, tôi có thể xem tất cả các đơn hàng của mình.
 - Là người dùng, tôi có thể xem chi tiết của một đơn hàng cụ thể để biết thêm thông tin về sách và trạng thái đơn hàng.
 - Là người dùng, tôi có thể hủy đơn hàng của mình nếu đơn hàng chưa được thanh toán hoặc gửi đi.
+- Là người dùng tôi có thể xem lịch sử mua hàng
 
 # API endpoints
 
@@ -87,10 +83,26 @@ Tính năng hy vọng sẽ phát triển trong tương lai là cho phép ngườ
  * @access Public
  */
 ```
+```js
+/**
+ * @route POST /forgot-password
+ * @description Send password reset link
+ * @body {email}
+ * @access Public
+ */
+```
+```js
+/**
+ * @route POST /reset-password
+ * @description Reset user password
+ * @body {token, password}
+ * @access Public
+ */
+```
 
 ## User apis
 
-```javaScript
+```js
 /**
  * @route POST /users
  * @description Register for a new account
@@ -98,8 +110,12 @@ Tính năng hy vọng sẽ phát triển trong tương lai là cho phép ngườ
  * @access Public
  */
 ```
+```js
 
-```javaScript
+```
+
+
+```js
 /**
  * @route GET /users
  * @description get all User
@@ -108,7 +124,7 @@ Tính năng hy vọng sẽ phát triển trong tương lai là cho phép ngườ
  */
 ```
 
-```javaScript
+```js
 /**
  * @route GET /users/me
  * @description get current user info
@@ -117,7 +133,7 @@ Tính năng hy vọng sẽ phát triển trong tương lai là cho phép ngườ
 ```
 
 
-```javaScript
+```js
 /**
  * @route GET /users/:id
  * @description get a User by id
@@ -126,7 +142,7 @@ Tính năng hy vọng sẽ phát triển trong tương lai là cho phép ngườ
  */
 ```
 
-```javaScript
+```js
 /**
  * @route PUT /users/:id
  * @description update a user
