@@ -23,6 +23,8 @@
 Cửa hàng sách trực tuyến của tôi là ứng dụng cung cấp một bộ sưu tập phong phú các cuốn sách thuộc nhiều thể loại khác nhau, cho phép người dùng dễ dàng tìm kiếm, đặt mua sách theo ý muốn.
 Tính năng hy vọng sẽ phát triển trong tương lai là cho phép người mua sách thanh toán linh hoạt bằng nhiều hình thức khác nhau.
 
+
+
 ## Auth
 
 - Là người dùng, tôi có thể đăng nhập bằng email và mật khẩu của mình.
@@ -70,6 +72,58 @@ Tính năng hy vọng sẽ phát triển trong tương lai là cho phép ngườ
 - Là người dùng, tôi có thể xem chi tiết của một đơn hàng cụ thể để biết thêm thông tin về sách và trạng thái đơn hàng.
 - Là người dùng, tôi có thể hủy đơn hàng của mình nếu đơn hàng chưa được thanh toán hoặc gửi đi.
 - Là người dùng tôi có thể xem lịch sử mua hàng
+
+
+## Công nghệ sử dụng
+
+- Node.js + Express
+- MongoDB + Mongoose
+- JWT Authentication
+- BcryptJS (mã hóa mật khẩu)
+- Multer (upload ảnh sách nếu có)
+- Express-validator (xác thực dữ liệu)
+- dotenv (biến môi trường)
+
+
+##  Cài đặt & Chạy dự án
+
+### Yêu cầu:
+- Node.js >= 16
+- MongoDB (local hoặc MongoDB Atlas)
+
+### Các bước thực hiện:
+
+```bash
+git clone https://github.com/thaobuihb/final-project-be.git
+cd final-project-be
+npm install
+```
+
+### Tạo file `.env`:
+
+```env
+PORT=5001
+MONGODB_URI="mongodb+srv://bookStore:Dinhngocankhue04092020@cluster0.hp9il.mongodb.net/"
+JWT_SECRET_KEY="nscefeufycwefcy3847bcsnxm.czdmimx;/c"
+```
+
+### Chạy server:
+
+```bash
+npm run dev
+```
+
+Truy cập tại: `http://localhost:5001`
+
+
+## Lộ trình phát triển 
+- [ ] Hoàn thiện phần Review, đánh giá sách của người dùng
+- [ ] Tích hợp thanh toán thực tế (VNPAY, MoMo, PayPal)
+- [ ] Gửi email xác nhận đơn hàng
+- [ ] Tạo log chi tiết bằng Winston
+- [ ] Tách hệ thống phân quyền linh hoạt hơn (editor, owner)
+- [ ] Đọc sách online hoặc nghe audio từ backend (streaming)
+
 
 # API endpoints
 
@@ -390,4 +444,4 @@ Tính năng hy vọng sẽ phát triển trong tương lai là cho phép ngườ
 
 ## Entity Relationship Diagram
 
-![Alt text](./screenshot.png)
+![ERD](./screenshot.png)
