@@ -51,20 +51,17 @@ app.use((req, res, next) => {
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.log("🔥 Middleware lỗi đã nhận lỗi");
-
   console.error("🔥 Lỗi toàn cục:", err);
 
   const statusCode = err.statusCode || 500;
-  
-  console.log("🔥 Response sẽ gửi về:", {
-      success: false,
-      message: err.message || "Lỗi không xác định từ máy chủ!",
-  });
+  const message = err.message || "Lỗi không xác định từ máy chủ!";
+  const errorType = err.errorType || err.name || "UnknownError";
 
-  res.setHeader("Content-Type", "application/json");
   res.status(statusCode).json({
-      success: false,
-      message: err.message || "Lỗi không xác định từ máy chủ!",
+    success: false,
+    message,
+    errorType,
+    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
   });
 });
 

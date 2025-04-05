@@ -23,6 +23,8 @@ bookController.createBook = catchAsync(async (req, res, next) => {
   } = req.body;
 
   // Kiểm tra trường bắt buộc
+  console.log("📥 ĐÃ VÀO controller createBook");
+console.log("📦 req.body:", req.body);
   if (!name || !price || !publicationDate || !categoryId) {
     throw new AppError(
       StatusCodes.BAD_REQUEST,
@@ -85,7 +87,9 @@ bookController.createBook = catchAsync(async (req, res, next) => {
 
   const Isbn = await generateUniqueISBN(); 
 
-  const book = await Book.create({
+  let book;
+try {
+  book = await Book.create({
     name,
     author,
     price,
@@ -99,6 +103,41 @@ bookController.createBook = catchAsync(async (req, res, next) => {
     categoryName: category.categoryName,
     Isbn,
   });
+} catch (error) {
+  console.error("🔥 Lỗi khi tạo sách:", error.message);
+
+  if (error.errors) {
+    for (let key in error.errors) {
+      console.error(`  ❌ Lỗi ở '${key}':`, error.errors[key].message);
+    }
+  }
+
+  // trả về lỗi rõ ràng cho FE
+  return res.status(422).json({
+    message: "Lỗi khi tạo sách",
+    details: error.message,
+    fields: Object.keys(error.errors || {}).reduce((acc, key) => {
+      acc[key] = error.errors[key].message;
+      return acc;
+    }, {}),
+  });
+}
+
+
+  // const book = await Book.create({
+  //   name,
+  //   author,
+  //   price,
+  //   discountedPrice,
+  //   discountRate: discountRate || 0,
+  //   rating: rating || 0,
+  //   publicationDate,
+  //   img,
+  //   description,
+  //   category: category._id,
+  //   categoryName: category.categoryName,
+  //   Isbn,
+  // });
 
   sendResponse(
     res,

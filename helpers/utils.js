@@ -21,7 +21,7 @@ utilsHelper.sendResponse = (res, status, success, data, errors, message) => {
       //All errors using this class are operatonal errors
       this.isOperational = true;
 
-      Error.captureStackTrace(this, this.costructor);
+      Error.captureStackTrace(this, this.constructor);
     }
   }
   utilsHelper.AppError = AppError;

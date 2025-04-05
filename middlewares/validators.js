@@ -11,24 +11,49 @@ const { StatusCodes } = require("http-status-codes");
 const moment = require("moment");
 const validators = {};
 
+// validators.validate = (validationArray) => async (req, res, next) => {
+//   await Promise.all(validationArray.map((validation) => validation.run(req)));
+//   const errors = validationResult(req);
+//   if (errors.isEmpty()) return next();
+
+//   const message = errors
+//     .array()
+//     .map((error) => error.msg)
+//     .join(" & ");
+//   return sendResponse(
+//     res,
+//     StatusCodes.UNPROCESSABLE_ENTITY,
+//     false,
+//     null,
+//     { message },
+//     "Validation Error"
+//   );
+// };
+
 validators.validate = (validationArray) => async (req, res, next) => {
   await Promise.all(validationArray.map((validation) => validation.run(req)));
+
   const errors = validationResult(req);
   if (errors.isEmpty()) return next();
 
-  const message = errors
-    .array()
-    .map((error) => error.msg)
-    .join(" & ");
+  const formattedErrors = {};
+  errors.array().forEach((err) => {
+    formattedErrors[err.param] = err.msg;
+  });
+
+  console.error("❌ Lỗi validate:", formattedErrors);
+
+
   return sendResponse(
     res,
     StatusCodes.UNPROCESSABLE_ENTITY,
     false,
     null,
-    { message },
+    formattedErrors, 
     "Validation Error"
   );
 };
+
 
 validators.validateObjectId = (...fields) => {
   return (req, res, next) => {
@@ -71,8 +96,8 @@ validators.createBookValidator = [
    .optional({ checkFalsy: true })
     .isURL().withMessage('Invalid image URL'),
   
-  body('description')
-    .notEmpty().withMessage('Description is required'),
+  // body('description')
+  //   .notEmpty().withMessage('Description is required'),
   
   body('discountRate')
     .optional()

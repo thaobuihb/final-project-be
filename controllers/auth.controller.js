@@ -3,8 +3,8 @@ const User = require("../models/User");
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 
-console.log("Crypto Module:", crypto);
-console.log("Crypto.randomBytes:", typeof crypto.randomBytes);
+// console.log("Crypto Module:", crypto);
+// console.log("Crypto.randomBytes:", typeof crypto.randomBytes);
 
 const { StatusCodes } = require("http-status-codes");
 
