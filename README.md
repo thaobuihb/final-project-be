@@ -88,7 +88,8 @@ Tính năng hy vọng sẽ phát triển trong tương lai là cho phép ngườ
 ##  Cài đặt & Chạy dự án
 
 ### Yêu cầu:
-- Node.js >= 16
+- Node.js: >=V22.1.0
+- NPM: >=10.8.1
 - MongoDB (local hoặc MongoDB Atlas)
 
 ### Các bước thực hiện:

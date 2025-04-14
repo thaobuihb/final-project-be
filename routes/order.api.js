@@ -5,6 +5,8 @@ const authentication = require("../middlewares/authentication");
 const validators = require("../middlewares/validators");
 
 
+router.put("/:orderId/transaction", orderController.updateTransactionId);
+
 /**
  * @route GET /orders/guest/:orderCode
  * @description Get guest order details by order code
@@ -119,6 +121,10 @@ router.delete(
   validators.validateObjectId("orderId"),
   orderController.deleteOrder
 );
+
+// router.put("/:orderId/transaction", orderController.updateTransactionId);
+
+
 
 
 module.exports = router;
