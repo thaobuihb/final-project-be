@@ -40,6 +40,31 @@ router.get("/", authentication.loginRequired, authentication.authorize(["admin"]
  */
 router.get("/me", authentication.loginRequired, userController.getCurrentUser);
 
+
+/**
+ * @route PUT /users/me
+ * @description update current user profile
+ * @body {name, email, password}
+ * @access Login required
+ */
+router.put(
+  "/me",
+  authentication.loginRequired,
+  userController.updateUserProfile
+);
+
+/**
+ * @route PUT /users/change-password
+ * @description change password
+ * @body {oldPassword, newPassword}
+ * @access Login required
+ */
+router.put(
+  "/change-password",
+  authentication.loginRequired,
+  userController.changeUserPassword
+);
+
 /**
  * @route GET /users/:id
  * @description get a User by id
@@ -62,6 +87,7 @@ router.get(
 router.put(
   "/:id",
   authentication.loginRequired,
+  authentication.authorize(['admin']),
   validators.validateObjectId("id"),
   userController.updateUser
 );
@@ -78,4 +104,5 @@ router.delete(
   validators.validateObjectId("id"),
   userController.deleteUser
 );
+
 module.exports = router;

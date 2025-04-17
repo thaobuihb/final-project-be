@@ -1,112 +1,121 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-
-const orderSchema = new Schema({
-  userId: {
+const orderSchema = new Schema(
+  {
+    userId: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: false,
-  },
-  books: [
+    },
+    guestEmail: {
+      type: String,
+    },
+    books: [
       {
-          bookId: {
-              type: Schema.Types.ObjectId,
-              required: true,
-              ref: "Book",
-          },
-          name: {
-              type: String,
-              required: true,
-          },
-          quantity: {
-              type: Number,
-              required: true,
-          },
-          price: {
-              type: Number,
-              required: true,
-          },
-          total: {
-              type: Number,
-              required: true,
-          },
-          Isbn: {
-            type: String,
-            required: true,
-          },
+        bookId: {
+          type: Schema.Types.ObjectId,
+          required: true,
+          ref: "Book",
+        },
+        name: {
+          type: String,
+          required: true,
+        },
+        quantity: {
+          type: Number,
+          required: true,
+        },
+        price: {
+          type: Number,
+          required: true,
+        },
+        total: {
+          type: Number,
+          required: true,
+        },
+        Isbn: {
+          type: String,
+          required: true,
+        },
       },
-  ],
-  status: {
+    ],
+    status: {
       type: String,
-      enum: ["Đang xử lý", "Đã giao hàng", "Đã nhận hàng", "Trả hàng", "Đã hủy"],
+      enum: [
+        "Đang xử lý",
+        "Đã giao hàng",
+        "Đã nhận hàng",
+        "Trả hàng",
+        "Đã hủy",
+      ],
       default: "Đang xử lý",
-  },
-  paymentStatus: {
+    },
+    paymentStatus: {
       type: String,
-      enum: ["Chưa thanh toán"
-      , "Đã thanh toán", "Đã hoàn tiền"],
-      default: "Chưa thanh toán"
-      ,
-  },
-  
-  totalAmount: {
+      enum: ["Chưa thanh toán", "Đã thanh toán", "Đã hoàn tiền"],
+      default: "Chưa thanh toán",
+    },
+
+    totalAmount: {
       type: Number,
       required: true,
-  },
-  shippingFee: {
+    },
+    shippingFee: {
       type: Number,
       default: 0,
-  },
-  shippingAddress: {
-    fullName: { type: String, required: true },
-    phone: { type: String, required: true },
-    addressLine: { type: String, required: true },
-    city: { type: String, required: true },
-    state: { type: String, required: true },
-    ward: { type: String, required: true }, 
-    zipcode: { type: String, default: "" }, 
-    country: { type: String, default: "Vietnam" },
-},
+    },
+    shippingAddress: {
+      fullName: { type: String, required: true },
+      phone: { type: String, required: true },
+      addressLine: { type: String, required: true },
+      city: { type: String, required: true },
+      state: { type: String, required: true },
+      ward: { type: String, required: true },
+      zipcode: { type: String, default: "" },
+      country: { type: String, default: "Vietnam" },
+    },
 
-  paymentMethods: {
+    paymentMethods: {
       type: String,
       enum: ["After receive", "PayPal"],
       required: true,
-  },
-  transactionId: {
+    },
+    transactionId: {
       type: String,
       default: "",
-  },
-  orderNotes: {
+    },
+    orderNotes: {
       type: String,
       default: "",
-  },
-  isDeleted: {
+    },
+    isDeleted: {
       type: Boolean,
       default: false,
       select: false,
-  },
-  orderCode: {
-    type: String,
-    unique: true,
-    required: true,
-},
-isGuestOrder: {
-    type: Boolean,
-    default: false,
-},
-statusHistory: [
-    {
+    },
+    orderCode: {
+      type: String,
+      unique: true,
+      required: true,
+    },
+    isGuestOrder: {
+      type: Boolean,
+      default: false,
+    },
+    statusHistory: [
+      {
         status: { type: String, required: true },
         updatedAt: { type: Date, default: Date.now },
+      },
+    ],
+    discount: {
+      code: { type: String, default: "" },
+      amount: { type: Number, default: 0 },
     },
-],
-discount: {
-    code: { type: String, default: "" },
-    amount: { type: Number, default: 0 },
   },
-}, { timestamps: true, versionKey: false, strict: true });
+  { timestamps: true, versionKey: false, strict: true }
+);
 
 orderSchema.methods.toJSON = function () {
   const order = this._doc;

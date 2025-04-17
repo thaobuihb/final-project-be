@@ -14,7 +14,7 @@ const orderController = {};
 // Tạo đơn hàng khách đăng nhập
 orderController.createOrder = catchAsync(async (req, res) => {
   const { userId } = req.params;
-  const { books, shippingAddress, paymentMethods } = req.body;
+  const { books, shippingAddress, paymentMethods, guestEmail } = req.body;
 
   // console.log("Dữ liệu nhận được trong req.body:", req.body);
 
@@ -135,6 +135,7 @@ orderController.createOrder = catchAsync(async (req, res) => {
     shippingFee,
     status: "Đang xử lý",
     isGuestOrder: null,
+    guestEmail: req.body.guestEmail,
   });
 
   sendResponse(
@@ -288,16 +289,27 @@ orderController.getAllOrders = catchAsync(async (req, res) => {
       query[searchCriteria] = { $regex: search, $options: "i" };
     }
   }
-  const orders = await Order.find(query);
+
+  const orders = await Order.find(query)
+    .populate("userId", "email") // 👉 lấy email từ người dùng
+    .lean(); // lấy plain object thay vì mongoose doc
+
+  // 👉 Gắn thêm customerEmail từ userId hoặc guestEmail
+  const enrichedOrders = orders.map((order) => ({
+    ...order,
+    customerEmail: order.userId?.email || order.guestEmail || "Không có email",
+  }));
+
   sendResponse(
     res,
     StatusCodes.OK,
     true,
-    orders,
+    enrichedOrders,
     null,
     "Orders retrieved successfully"
   );
 });
+
 
 orderController.updateOrderAD = catchAsync(async (req, res) => {
   const { status } = req.body;
@@ -605,7 +617,7 @@ orderController.addOrderFeedback = catchAsync(async (req, res) => {
 
 //tạo đơn hàng khách không đăng nhập
 orderController.createGuestOrder = catchAsync(async (req, res) => {
-  const { books, shippingAddress, paymentMethods } = req.body;
+  const { books, shippingAddress, paymentMethods, guestEmail } = req.body;
 
   // 1. Kiểm tra danh sách sách
   if (!Array.isArray(books) || books.length === 0) {
@@ -701,6 +713,7 @@ orderController.createGuestOrder = catchAsync(async (req, res) => {
     totalAmount,
     isGuestOrder: true,
     userId: null,
+    guestEmail,
   });
   console.log("📦 Đơn hàng khách vãng lai:", newOrder);
 

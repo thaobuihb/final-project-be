@@ -204,7 +204,7 @@ userController.getUserById = catchAsync(async (req, res, next) => {
   );
 });
 
-// Cập nhật thông tin người dùng
+// Cập nhật thông tin người dùng cho admin
 userController.updateUser = catchAsync(async (req, res, next) => {
   const currentUserId = req.userId;
   const userId = req.params.id;
@@ -293,5 +293,77 @@ userController.deleteUser = catchAsync(async (req, res, next) => {
     "User deleted successfully"
   );
 });
+
+// chính chủ cập nhật thông tin người dùng 
+userController.updateUserProfile = catchAsync(async (req, res, next) => {
+  const userId = req.userId;
+
+  const user = await User.findOne({ _id: userId, isDeleted: false });
+
+  if (!user) {
+    throw new AppError(404, "User not found", "Update Profile Error");
+  }
+
+  const updatableFields = [
+    "name",
+    "gender",
+    "birthday",
+    "city",
+    "district",
+    "ward",
+    "street",
+    "houseNumber",
+    "phone",
+    "zipcode",
+  ];
+
+  updatableFields.forEach((field) => {
+    if (req.body[field] !== undefined) {
+      user[field] = req.body[field];
+    }
+  });
+
+  if (typeof req.body.password === "string" && req.body.password.trim() !== "") {
+    user.password = req.body.password;
+  }
+  
+  await user.save();
+
+  sendResponse(
+    res,
+    200,
+    true,
+    user,
+    null,
+    "User profile updated successfully"
+  );
+});
+
+//thay đổi mật khẩu
+userController.changeUserPassword = catchAsync(async (req, res, next) => {
+  const userId = req.userId;
+  const { currentPassword, newPassword } = req.body;
+
+  const user = await User.findById(userId).select("+password");
+
+  if (!user) {
+    throw new AppError(404, "User not found", "Change Password Error");
+  }
+
+  const isMatch = await bcrypt.compare(currentPassword, user.password);
+  if (!isMatch) {
+    throw new AppError(400, "Mật khẩu hiện tại không đúng", "Change Password Error");
+  }
+
+  user.password = newPassword;
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Mật khẩu đã được cập nhật",
+  });
+});
+
+
 
 module.exports = userController;
