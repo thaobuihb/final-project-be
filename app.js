@@ -13,17 +13,24 @@ const app = express();
 
 
 const allowedOrigins = [
-  "http://localhost:3000",         
-  "http://localhost:5001",         
-  "https://book-store-thao-fe.netlify.app/" 
+  "http://localhost:3000", 
+  "http://localhost:5001", 
+  "https://book-store-thao-fe.netlify.app" 
 ];
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"],
   methods: ["GET", "POST", "PUT", "DELETE"]
 }));
+
 
 app.use(cors({
   origin: "http://localhost:5001",
