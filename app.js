@@ -3,19 +3,18 @@ require("dotenv").config();
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
-const cors = require("cors")
-const {sendResponse} = require("./helpers/utils")
+const cors = require("cors");
+const { sendResponse } = require("./helpers/utils");
 const { StatusCodes } = require("http-status-codes");
 
 const indexRouter = require('./routes/index');
-
 const app = express();
 
-
+// ✅ Cấu hình CORS cho cả local và Netlify
 const allowedOrigins = [
-  "http://localhost:3000", 
-  "http://localhost:5001", 
-  "https://book-store-thao-fe.netlify.app" 
+  "http://localhost:3000",
+  "http://localhost:5001",
+  "https://book-store-thao-fe.netlify.app"
 ];
 
 app.use(cors({
@@ -23,6 +22,7 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.error("❌ Blocked by CORS:", origin);
       callback(new Error("Not allowed by CORS"));
     }
   },
@@ -31,36 +31,37 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE"]
 }));
 
-
-app.use(cors({
-  origin: "http://localhost:5001",
-  credentials: true,
-  allowedHeaders: ["Content-Type", "Authorization"],
-  methods: ["GET", "POST", "PUT", "DELETE"]
-}));
-app.use(express.json());  
-app.use(express.urlencoded({ extended: true }));  
+// Middleware chuẩn khác
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(logger('dev'));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ✅ Kết nối MongoDB
 const mongoose = require("mongoose");
-const mongoURI = process.env.MONGODB_URI
+const mongoURI = process.env.MONGODB_URI;
 mongoose.connect(mongoURI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 5000, 
-  socketTimeoutMS: 45000, 
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
 })
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((error) => {
     console.error("❌ MongoDB Connection Error:", error.message);
-    process.exit(1); 
+    process.exit(1);
   });
 
+// ✅ Mount route chính
 app.use('/api', indexRouter);
 
-// Catch 404 Error Handler
+// ✅ Route root để test
+app.get("/", (req, res) => {
+  res.send("API is running 🚀");
+});
+
+// ✅ 404 Error Handler
 app.use((req, res, next) => {
   console.log("Request Body:", req.body);
   const err = new Error("Not Found");
@@ -68,7 +69,7 @@ app.use((req, res, next) => {
   next(err);
 });
 
-// Global Error Handler
+// ✅ Global Error Handler
 app.use((err, req, res, next) => {
   console.log("🔥 Middleware lỗi đã nhận lỗi");
   console.error("🔥 Lỗi toàn cục:", err);
@@ -84,11 +85,5 @@ app.use((err, req, res, next) => {
     stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
   });
 });
-
-app.get("/", (req, res) => {
-  res.send("API is running 🚀");
-});
-
-
 
 module.exports = app;
