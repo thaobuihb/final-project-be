@@ -18,6 +18,7 @@
     - [Order API](#order-apis)
 
 - [Entity Relationship Diagram](#entity-relationship-diagram)
+- [Công nghệ & Thư viện backend](#công-nghệ-thư-viện-backend)
 
 # BOOK STORE
 Cửa hàng sách trực tuyến của tôi là ứng dụng cung cấp một bộ sưu tập phong phú các cuốn sách thuộc nhiều thể loại khác nhau, cho phép người dùng dễ dàng tìm kiếm, đặt mua sách theo ý muốn.
@@ -446,3 +447,46 @@ Truy cập tại: `http://localhost:5001`
 ## Entity Relationship Diagram
 
 ![ERD](./screenshot.png)
+
+## Công Nghệ Sử Dụng (Backend)
+
+- Node.js + Express
+- MongoDB + Mongoose
+- JWT Authentication
+- BcryptJS (mã hóa mật khẩu)
+- Joi + express-validator (xác thực dữ liệu)
+- Multer (upload ảnh nếu có)
+- dotenv (quản lý biến môi trường)
+- Winston (ghi log – dự kiến)
+
+---
+
+## 📦 Các thư viện sử dụng (Backend)
+
+### 🚀 Core
+- express
+- cors
+- morgan
+- dotenv
+- cookie-parser
+
+### 🗃️ Database
+- mongoose
+
+### 🔐 Xác thực & Bảo mật
+- jsonwebtoken
+- bcryptjs
+- express-rate-limit
+- uuid
+
+### 🧾 Validate & Format
+- joi
+- express-validator
+- http-status-codes
+- moment
+
+### 🛠 Tiện ích & Công cụ
+- axios
+- csvtojson
+- debug
+- nodemon
