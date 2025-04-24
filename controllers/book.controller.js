@@ -1,8 +1,8 @@
 const Book = require("../models/Book.js");
 const Review = require("../models/Review.js");
 const Category = require("../models/Category.js");
-const Order = require("../models/Order.js")
-const DeletedBook = require("../models/DeletedBook.js")
+const Order = require("../models/Order.js");
+const DeletedBook = require("../models/DeletedBook.js");
 const { sendResponse, catchAsync, AppError } = require("../helpers/utils");
 const mongoose = require("mongoose");
 const { StatusCodes } = require("http-status-codes");
@@ -24,7 +24,7 @@ bookController.createBook = catchAsync(async (req, res, next) => {
 
   // Kiểm tra trường bắt buộc
   console.log("📥 ĐÃ VÀO controller createBook");
-console.log("📦 req.body:", req.body);
+  console.log("📦 req.body:", req.body);
   if (!name || !price || !publicationDate || !categoryId) {
     throw new AppError(
       StatusCodes.BAD_REQUEST,
@@ -46,7 +46,9 @@ console.log("📦 req.body:", req.body);
   // Tính giá sau giảm giá
   let discountedPrice = price;
   if (discountRate && discountRate > 0) {
-    discountedPrice = parseFloat((price - (price * discountRate) / 100).toFixed(2));
+    discountedPrice = parseFloat(
+      (price - (price * discountRate) / 100).toFixed(2)
+    );
   }
 
   const generateUniqueISBN = async () => {
@@ -57,7 +59,9 @@ console.log("📦 req.body:", req.body);
       generatedISBN = generateISBN();
 
       const existingBook = await Book.exists({ Isbn: generatedISBN });
-      const existingDeletedBook = await DeletedBook.exists({ Isbn: generatedISBN });
+      const existingDeletedBook = await DeletedBook.exists({
+        Isbn: generatedISBN,
+      });
 
       if (!existingBook && !existingDeletedBook) {
         isUnique = true;
@@ -68,7 +72,7 @@ console.log("📦 req.body:", req.body);
   };
 
   const generateISBN = () => {
-    const prefix = "978"; 
+    const prefix = "978";
     let randomNumbers = "";
     for (let i = 0; i < 9; i++) {
       randomNumbers += Math.floor(Math.random() * 10);
@@ -85,44 +89,43 @@ console.log("📦 req.body:", req.body);
     return `${isbnWithoutChecksum}${checksum}`;
   };
 
-  const Isbn = await generateUniqueISBN(); 
+  const Isbn = await generateUniqueISBN();
 
   let book;
-try {
-  book = await Book.create({
-    name,
-    author,
-    price,
-    discountedPrice,
-    discountRate: discountRate || 0,
-    rating: rating || 0,
-    publicationDate,
-    img,
-    description,
-    category: category._id,
-    categoryName: category.categoryName,
-    Isbn,
-  });
-} catch (error) {
-  console.error("🔥 Lỗi khi tạo sách:", error.message);
+  try {
+    book = await Book.create({
+      name,
+      author,
+      price,
+      discountedPrice,
+      discountRate: discountRate || 0,
+      rating: rating || 0,
+      publicationDate,
+      img,
+      description,
+      category: category._id,
+      categoryName: category.categoryName,
+      Isbn,
+    });
+  } catch (error) {
+    console.error("🔥 Lỗi khi tạo sách:", error.message);
 
-  if (error.errors) {
-    for (let key in error.errors) {
-      console.error(`  ❌ Lỗi ở '${key}':`, error.errors[key].message);
+    if (error.errors) {
+      for (let key in error.errors) {
+        console.error(`  ❌ Lỗi ở '${key}':`, error.errors[key].message);
+      }
     }
+
+    // trả về lỗi rõ ràng cho FE
+    return res.status(422).json({
+      message: "Lỗi khi tạo sách",
+      details: error.message,
+      fields: Object.keys(error.errors || {}).reduce((acc, key) => {
+        acc[key] = error.errors[key].message;
+        return acc;
+      }, {}),
+    });
   }
-
-  // trả về lỗi rõ ràng cho FE
-  return res.status(422).json({
-    message: "Lỗi khi tạo sách",
-    details: error.message,
-    fields: Object.keys(error.errors || {}).reduce((acc, key) => {
-      acc[key] = error.errors[key].message;
-      return acc;
-    }, {}),
-  });
-}
-
 
   // const book = await Book.create({
   //   name,
@@ -149,12 +152,11 @@ try {
   );
 });
 
-
 // Get all books
 bookController.getAllBooks = catchAsync(async (req, res, next) => {
   const {
     page = 1,
-    limit = 30,
+    limit = 14,
     search,
     minPrice,
     maxPrice,
@@ -232,12 +234,10 @@ bookController.getAllBooks = catchAsync(async (req, res, next) => {
   ]);
 
   const { paginatedBooks, totalCount } = result[0];
-  const totalPages =
-    paginatedBooks.length > 0
-      ? Math.ceil(totalCount[0].total / limitNumber)
-      : 0;
+  const total = totalCount[0]?.total || 0;
+  const totalPages = Math.ceil(total / limitNumber);
 
-  const response = { books: paginatedBooks, totalPages };
+  const response = { books: paginatedBooks, totalPages, currentPage: pageNumber, };
   sendResponse(
     res,
     StatusCodes.OK,
@@ -715,20 +715,19 @@ bookController.getBooksByCartIds = catchAsync(async (req, res, next) => {
   );
 });
 
-
 //lấy sách bán chạy
 bookController.getBestSellerBooks = catchAsync(async (req, res, next) => {
   try {
     const bestSellerBooks = await Order.aggregate([
-      { $unwind: "$books" }, 
+      { $unwind: "$books" },
       {
         $group: {
-          _id: "$books.bookId", 
-          totalSold: { $sum: "$books.quantity" } 
+          _id: "$books.bookId",
+          totalSold: { $sum: "$books.quantity" },
         },
       },
-      { $sort: { totalSold: -1 } }, 
-      { $limit: 10 }, 
+      { $sort: { totalSold: -1 } },
+      { $limit: 10 },
       {
         $lookup: {
           from: "books",
@@ -751,7 +750,14 @@ bookController.getBestSellerBooks = catchAsync(async (req, res, next) => {
       },
     ]);
 
-    sendResponse(res, 200, true, bestSellerBooks, null, "Best seller books retrieved successfully");
+    sendResponse(
+      res,
+      200,
+      true,
+      bestSellerBooks,
+      null,
+      "Best seller books retrieved successfully"
+    );
   } catch (error) {
     next(error);
   }
