@@ -9,6 +9,8 @@ const { StatusCodes } = require("http-status-codes");
 
 const indexRouter = require('./routes/index');
 const app = express();
+const setupSwagger = require("./swagger");
+setupSwagger(app);
 
 // ✅ Cấu hình CORS cho cả local và Netlify
 const allowedOrigins = [

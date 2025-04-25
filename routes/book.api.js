@@ -4,12 +4,40 @@ const bookController = require("../controllers/book.controller");
 const authentication = require("../middlewares/authentication");
 const validators = require("../middlewares/validators");
 
+/**
+ * @swagger
+ * tags:
+ *   name: Books
+ *   description: Quản lý sách
+ */
 
 /**
- * @route POST /books/
- * @description Create a new book
- * @body { name, author, price, publicationDate }
- * @access admin
+ * @swagger
+ * /books:
+ *   post:
+ *     summary: Thêm sách mới
+ *     tags: [Books]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               author:
+ *                 type: string
+ *               price:
+ *                 type: number
+ *               publicationDate:
+ *                 type: string
+ *                 format: date
+ *     responses:
+ *       201:
+ *         description: Tạo thành công
  */
 router.post(
   "/",
@@ -20,44 +48,80 @@ router.post(
 );
 
 /**
- * @route GET /books
- * @description Get all books
- * @body none
- * @access Public
+ * @swagger
+ * /books:
+ *   get:
+ *     summary: Lấy danh sách tất cả sách
+ *     tags: [Books]
+ *     responses:
+ *       200:
+ *         description: Thành công
  */
 router.get("/", bookController.getAllBooks);
 
+/**
+ * @swagger
+ * /books/best-seller:
+ *   get:
+ *     summary: Lấy sách bán chạy
+ *     tags: [Books]
+ *     responses:
+ *       200:
+ *         description: Thành công
+ */
 router.get("/best-seller", bookController.getBestSellerBooks);
 
 /**
- * @route GET /books/new-released
- * @description Get newly released books
- * @body none
- * @access Public
+ * @swagger
+ * /books/new-released:
+ *   get:
+ *     summary: Lấy sách mới phát hành
+ *     tags: [Books]
+ *     responses:
+ *       200:
+ *         description: Thành công
  */
 router.get("/new-released", bookController.getNewlyReleasedBooks);
 
 /**
- * @route GET /books/discounted
- * @description Get all discounted books
- * @body none
- * @access Public
+ * @swagger
+ * /books/discounted:
+ *   get:
+ *     summary: Lấy sách đang giảm giá
+ *     tags: [Books]
+ *     responses:
+ *       200:
+ *         description: Thành công
  */
 router.get("/discounted", bookController.getDiscountedBooks);
 
 /**
- * @route GET /books/categories
- * @description Get list of book categories
- * @body none
- * @access Public
+ * @swagger
+ * /books/categories:
+ *   get:
+ *     summary: Lấy danh sách danh mục sách
+ *     tags: [Books]
+ *     responses:
+ *       200:
+ *         description: Thành công
  */
 router.get("/categories", bookController.getCategoryOfBooks);
 
 /**
- * @route GET /books/:id
- * @description Get book by id
- * @body none
- * @access Public
+ * @swagger
+ * /books/{id}:
+ *   get:
+ *     summary: Lấy chi tiết sách theo ID
+ *     tags: [Books]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Thành công
  */
 router.get(
   "/:id",
@@ -66,18 +130,56 @@ router.get(
 );
 
 /**
- * @route GET /books/category/:categoryId
- * @description Get books by categoryId
- * @body none
- * @access Public
+ * @swagger
+ * /books/category/{categoryId}:
+ *   get:
+ *     summary: Lấy sách theo danh mục
+ *     tags: [Books]
+ *     parameters:
+ *       - name: categoryId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Thành công
  */
 router.get("/category/:categoryId", bookController.getBooksByCategoryId);
 
 /**
- * @route PUT /books/:id
- * @description Update a book
- * @body { name, author, price, publicationDate }
- * @access admin
+ * @swagger
+ * /books/{id}:
+ *   put:
+ *     summary: Cập nhật thông tin sách
+ *     tags: [Books]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               author:
+ *                 type: string
+ *               price:
+ *                 type: number
+ *               publicationDate:
+ *                 type: string
+ *                 format: date
+ *     responses:
+ *       200:
+ *         description: Cập nhật thành công
  */
 router.put(
   "/:id",
@@ -88,10 +190,22 @@ router.put(
 );
 
 /**
- * @route DELETE /books/:id
- * @description Delete a book
- * @body none
- * @access admin
+ * @swagger
+ * /books/{id}:
+ *   delete:
+ *     summary: Xóa sách
+ *     tags: [Books]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Xóa thành công
  */
 router.delete(
   "/:id",
@@ -102,26 +216,66 @@ router.delete(
 );
 
 /**
- * @route POST /books/wishlist
- * @description Get books by a list of IDs
- * @body { bookIds: [Array of book IDs] }
- * @access Public
+ * @swagger
+ * /books/wishlist:
+ *   post:
+ *     summary: Lấy danh sách sách theo danh sách ID (wishlist)
+ *     tags: [Books]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               bookIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       200:
+ *         description: Thành công
  */
 router.post("/wishlist", bookController.getBooksByIds);
 
 /**
- * @route POST /books/carts
- * @description Get books by a list of IDs for cart
- * @body { bookIds: [Array of book IDs] }
- * @access Public
+ * @swagger
+ * /books/carts:
+ *   post:
+ *     summary: Lấy danh sách sách theo danh sách ID (giỏ hàng)
+ *     tags: [Books]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               bookIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       200:
+ *         description: Thành công
  */
 router.post("/carts", bookController.getBooksByCartIds);
 
 /**
- * @route GET /books/:bookId/with-category
- * @description Get book details along with books from the same category
- * @body none
- * @access Public
+ * @swagger
+ * /books/{bookId}/with-category:
+ *   get:
+ *     summary: Lấy chi tiết sách kèm theo các sách cùng danh mục
+ *     tags: [Books]
+ *     parameters:
+ *       - name: bookId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Thành công
  */
 router.get(
   "/:bookId/with-category",
