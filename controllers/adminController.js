@@ -54,8 +54,10 @@ adminController.getBooks = catchAsync(async (req, res, next) => {
   const query = { isDeleted: false };
 
   if (search) {
-    (query.name = { $regex: search, $options: "i" }),
-      { isbn: { $regex: search, $options: "i" } };
+    query.$or = [
+      { name: { $regex: new RegExp(search, "i") } },
+      { isbn: { $regex: new RegExp(search, "i") } },
+    ];
   }
 
   const books = await Book.aggregate([
