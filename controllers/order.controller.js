@@ -313,7 +313,7 @@ orderController.getAllOrders = catchAsync(async (req, res) => {
 
 orderController.updateOrderAD = catchAsync(async (req, res) => {
   const { status } = req.body;
-  const orderId = req.params.orderId;
+  const { orderId } = req.params;
 
   const order = await Order.findOne({
     _id: orderId,
@@ -331,9 +331,7 @@ orderController.updateOrderAD = catchAsync(async (req, res) => {
   const currentStatus = order.status.trim();
   const newStatus = status.trim();
 
-  console.log(
-    `🚀 Cập nhật trạng thái đơn hàng từ: '${currentStatus}' → '${newStatus}'`
-  );
+  console.log(`🚀 Cập nhật trạng thái đơn hàng từ: '${currentStatus}' → '${newStatus}'`);
 
   if (currentStatus === newStatus) {
     throw new AppError(
@@ -351,15 +349,7 @@ orderController.updateOrderAD = catchAsync(async (req, res) => {
     "Đã hủy": [],
   };
 
-  if (!validTransitions[currentStatus]) {
-    throw new AppError(
-      StatusCodes.BAD_REQUEST,
-      `Trạng thái hiện tại '${currentStatus}' không hợp lệ`,
-      "Lỗi cập nhật đơn hàng"
-    );
-  }
-
-  if (!validTransitions[currentStatus].includes(newStatus)) {
+  if (!validTransitions[currentStatus] || !validTransitions[currentStatus].includes(newStatus)) {
     throw new AppError(
       StatusCodes.BAD_REQUEST,
       `Không thể cập nhật trạng thái từ '${currentStatus}' sang '${newStatus}'`,
@@ -367,23 +357,25 @@ orderController.updateOrderAD = catchAsync(async (req, res) => {
     );
   }
 
-  if (status === "Đã hủy" && order.paymentStatus === "Đã thanh toán") {
-    console.log(
-      `🔄 Đơn hàng bị hủy - tự động hoàn tiền từ '${order.paymentStatus}' → 'Đã hoàn tiền'`
-    );
-    order.paymentStatus = "Đã hoàn tiền";
+  // 🔥 Gộp cập nhật trạng thái thanh toán tự động
+  if (newStatus === "Đã nhận hàng") {
+    if (order.paymentMethods === "After receive" && order.paymentStatus === "Chưa thanh toán") {
+      console.log(`🔄 Đã nhận hàng - thanh toán sau khi nhận => tự động cập nhật paymentStatus 'Đã thanh toán'`);
+      order.paymentStatus = "Đã thanh toán";
+    }
+  }
+
+  if (["Trả hàng", "Đã hủy"].includes(newStatus)) {
+    if (order.paymentStatus === "Đã thanh toán") {
+      console.log(`🔄 Đơn hàng '${newStatus}' - tự động hoàn tiền`);
+      order.paymentStatus = "Đã hoàn tiền";
+    }
   }
 
   order.status = newStatus;
-  if (newStatus === "Trả hàng" && order.paymentStatus === "Đã thanh toán") {
-    console.log(
-      "🔄 Đơn hàng đã được trả hàng, tự động chuyển trạng thái thanh toán thành 'Đã hoàn tiền'"
-    );
-    order.paymentStatus = "Đã hoàn tiền";
-  }
   await order.save();
 
-  console.log("✅ Cập nhật trạng thái thành công!");
+  console.log("✅ Cập nhật trạng thái đơn hàng và thanh toán thành công!");
 
   sendResponse(
     res,
@@ -419,58 +411,6 @@ orderController.deleteOrder = catchAsync(async (req, res) => {
   );
 });
 
-orderController.updatePaymentStatus = catchAsync(async (req, res) => {
-  const { orderId } = req.params;
-  const { paymentStatus } = req.body;
-
-  const order = await Order.findOne({ _id: orderId, isDeleted: false });
-
-  if (!order) {
-    throw new AppError(
-      StatusCodes.NOT_FOUND,
-      "Không tìm thấy đơn hàng",
-      "Lỗi cập nhật trạng thái thanh toán"
-    );
-  }
-
-  const currentPaymentStatus = order.paymentStatus.trim();
-  const newPaymentStatus = paymentStatus.trim();
-
-  const validTransitions = {
-    "Chưa thanh toán": ["Đã thanh toán"],
-    "Đã thanh toán": ["Đã hoàn tiền"],
-    "Đã hoàn tiền": [],
-  };
-
-  const shouldAutoRefund =
-    ["Trả hàng", "Đã hủy"].includes(order.status) &&
-    currentPaymentStatus === "Đã thanh toán";
-
-  if (shouldAutoRefund) {
-    order.paymentStatus = "Đã hoàn tiền";
-  } else {
-    if (!validTransitions[currentPaymentStatus].includes(newPaymentStatus)) {
-      throw new AppError(
-        StatusCodes.BAD_REQUEST,
-        `Không thể cập nhật trạng thái thanh toán từ '${currentPaymentStatus}' sang '${newPaymentStatus}'`,
-        "Lỗi cập nhật trạng thái thanh toán"
-      );
-    }
-    order.paymentStatus = newPaymentStatus;
-  }
-
-  await order.save();
-  console.log("✅ Cập nhật trạng thái thanh toán thành công!");
-
-  sendResponse(
-    res,
-    StatusCodes.OK,
-    true,
-    order,
-    null,
-    "Cập nhật trạng thái thanh toán thành công"
-  );
-});
 
 orderController.getOrdersByStatus = catchAsync(async (req, res) => {
   const { status } = req.params;

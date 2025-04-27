@@ -91,13 +91,13 @@ router.put(
 router.put("/guest/cancel/:orderCode", orderController.cancelGuestOrder);
 
 
-router.put(
-  "/:orderId/payment-status",
-  authentication.loginRequired,
-  authentication.authorize(["admin"]),
-  validators.validateObjectId("orderId"),
-  orderController.updatePaymentStatus
-);
+// router.put(
+//   "/:orderId/payment-status",
+//   authentication.loginRequired,
+//   authentication.authorize(["admin"]),
+//   validators.validateObjectId("orderId"),
+//   orderController.updatePaymentStatus
+// );
 router.put(
   "/:orderId/shipping-address",
   authentication.loginRequired,
